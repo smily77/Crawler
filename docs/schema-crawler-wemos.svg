@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="Segoe UI, Arial, sans-serif" font-size="13">
+  <rect width="960" height="460" fill="#ffffff"/>
+  <style>
+    .box { fill:#eef4fb; stroke:#2f4468; stroke-width:2; }
+    .title { font-size:20px; font-weight:bold; fill:#1d2b44; }
+    .h { font-size:15px; font-weight:bold; fill:#1d2b44; }
+    .pin { font-size:12px; fill:#1d2b44; }
+    .note { font-size:12px; fill:#555; }
+    .w { stroke-width:2; fill:none; }
+  </style>
+
+  <text x="30" y="34" class="title">Crawler Typ 2 – Wemos D1 mini (ESP8266), Motoren direkt an GPIO</text>
+
+  <!-- Wemos -->
+  <rect x="40" y="80" width="240" height="280" rx="8" class="box"/>
+  <text x="56" y="104" class="h">Wemos D1 mini (ESP8266)</text>
+  <g class="pin" text-anchor="end">
+    <text x="272" y="144">D6 (GPIO12)</text>
+    <text x="272" y="174">D5 (GPIO14)</text>
+    <text x="272" y="224">D1 (GPIO5)</text>
+    <text x="272" y="254">D2 (GPIO4)</text>
+    <text x="272" y="324">D7 (GPIO13)</text>
+  </g>
+  <text x="56" y="290" class="note">PWM 20 kHz, 10 Bit</text>
+
+  <g stroke="#7a4b00" class="w">
+    <line x1="280" y1="140" x2="440" y2="140"/>
+    <line x1="280" y1="170" x2="440" y2="170"/>
+    <line x1="280" y1="220" x2="440" y2="220"/>
+    <line x1="280" y1="250" x2="440" y2="250"/>
+  </g>
+
+  <!-- DRV8833 -->
+  <rect x="440" y="110" width="150" height="170" rx="8" class="box"/>
+  <text x="456" y="132" class="h">DRV8833</text>
+  <text x="450" y="160" class="pin">IN A1</text>
+  <text x="450" y="182" class="pin">IN A2</text>
+  <text x="450" y="226" class="pin">IN B1</text>
+  <text x="450" y="254" class="pin">IN B2</text>
+  <text x="582" y="172" class="pin" text-anchor="end">OUT A</text>
+  <text x="582" y="242" class="pin" text-anchor="end">OUT B</text>
+  <line x1="590" y1="168" x2="672" y2="168" stroke="#7a4b00" class="w"/>
+  <line x1="590" y1="238" x2="672" y2="238" stroke="#7a4b00" class="w"/>
+  <circle cx="694" cy="168" r="22" fill="#fff" stroke="#2f4468" stroke-width="2"/>
+  <text x="694" y="173" class="h" text-anchor="middle">M</text>
+  <circle cx="694" cy="238" r="22" fill="#fff" stroke="#2f4468" stroke-width="2"/>
+  <text x="694" y="243" class="h" text-anchor="middle">M</text>
+  <text x="726" y="172" class="pin">Motor 1 links</text>
+  <text x="726" y="242" class="pin">Motor 2 rechts</text>
+
+  <!-- WLAN-LED -->
+  <line x1="280" y1="320" x2="440" y2="320" stroke="#2e7d32" class="w"/>
+  <circle cx="450" cy="320" r="9" fill="#66bb6a" stroke="#333" stroke-width="1.2"/>
+  <text x="470" y="324" class="pin">WLAN-LED (blinkt beim Verbinden, an = verbunden)</text>
+
+  <text x="40" y="400" class="note">Typ-Erkennung: Kein Gerät auf I²C-Adresse 0x40 → Typ 2 (GPIO). Der I²C-Test läuft kurz über GPIO4/GPIO5, danach werden sie Motor-Ausgänge.</text>
+  <text x="40" y="420" class="note">Keine Fahrzeugbeleuchtung. Versorgung über Akku; Akkutyp und genaue DRV8833-Beschaltung gehen aus dem Code nicht hervor.</text>
+</svg>
