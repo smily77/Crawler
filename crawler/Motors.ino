@@ -145,6 +145,9 @@ void setMotorDirect(uint8_t pin1, uint8_t pin2, int16_t speed) {
     analogWrite(pin2, GPIO_PWM_MAX + speed);
   }
 #elif defined ESP32
+  #if ESP_ARDUINO_VERSION_MAJOR >= 3
+    #define ledcWrite ledcWriteChannel  // core 3.x: ledcWrite() takes a pin, we pass channels
+  #endif
 /*
   if (speed > 0) {
     ledcWrite(pin1, speed);  // actually a channel

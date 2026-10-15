@@ -4,8 +4,13 @@ typedef struct pairing_message {
   bool isPairing;
 } pairing_message;
 
-// Callback for received data
+// Callback for received data (signature changed with ESP32 core 3.x)
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len) {
+  const uint8_t *mac = info->src_addr;
+#else
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
+#endif
   if (FIXESP) Serial << "ESP-NOW msg received" << endl;
   if (len == sizeof(pairing_message)) {
     pairing_message message;
@@ -41,6 +46,11 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
 }
 
 // Callback for sent data
+// Send callback signature changed with ESP-IDF 5.5 (ESP32 core 3.3)
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 5, 0)
+void OnDataSent(const wifi_tx_info_t *tx_info, esp_now_send_status_t status) {
+#else
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+#endif
   if (status != ESP_NOW_SEND_SUCCESS) if (DEBUG) Serial << "Send fail" << endl;
 }

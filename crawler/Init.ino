@@ -54,6 +54,13 @@ void initGpioCrawler() {
     pinMode(MOTOR2_GPIO_PIN1, OUTPUT);
     pinMode(MOTOR2_GPIO_PIN2, OUTPUT);
   #elif defined ESP32
+  #if ESP_ARDUINO_VERSION_MAJOR >= 3
+    // Core 3.x: attach GPIO pins to fixed PWM channels (same channels as on core 2.x)
+    ledcAttachChannel(MOTOR1_GPIO_PIN1, GPIO_PWM_FREQ, GPIO_PWM_RESOLUTION, MOTOR1_CHAN1);
+    ledcAttachChannel(MOTOR1_GPIO_PIN2, GPIO_PWM_FREQ, GPIO_PWM_RESOLUTION, MOTOR1_CHAN2);
+    ledcAttachChannel(MOTOR2_GPIO_PIN1, GPIO_PWM_FREQ, GPIO_PWM_RESOLUTION, MOTOR2_CHAN1);
+    ledcAttachChannel(MOTOR2_GPIO_PIN2, GPIO_PWM_FREQ, GPIO_PWM_RESOLUTION, MOTOR2_CHAN2);
+  #else
     // Configure PWM channels
     ledcSetup(MOTOR1_CHAN1, GPIO_PWM_FREQ, GPIO_PWM_RESOLUTION);
     ledcSetup(MOTOR1_CHAN2, GPIO_PWM_FREQ, GPIO_PWM_RESOLUTION);
@@ -64,6 +71,7 @@ void initGpioCrawler() {
     ledcAttachPin(MOTOR1_GPIO_PIN2, MOTOR1_CHAN2);
     ledcAttachPin(MOTOR2_GPIO_PIN1, MOTOR2_CHAN1);
     ledcAttachPin(MOTOR2_GPIO_PIN2, MOTOR2_CHAN2);
+  #endif
   #endif 
   pinMode(wifiLed, OUTPUT);
 }

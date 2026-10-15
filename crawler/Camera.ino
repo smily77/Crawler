@@ -64,6 +64,7 @@ static esp_err_t stream_handler(httpd_req_t *req){
   if(res != ESP_OK){
     return res;
   }
+  streamActive = true;   // pause OTA while streaming
 
   while(true){
     fb = esp_camera_fb_get();
@@ -109,6 +110,7 @@ static esp_err_t stream_handler(httpd_req_t *req){
     }
     //Serial.printf("MJPG: %uB\n",(uint32_t)(_jpg_buf_len));
   }
+  streamActive = false;  // client gone, OTA available again
   return res;
 }
 

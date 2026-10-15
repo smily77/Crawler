@@ -170,6 +170,7 @@ static const char* _STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %
 
 httpd_handle_t camera_httpd = NULL;
 httpd_handle_t stream_httpd = NULL;
+volatile bool streamActive = false;  // true while a client is watching the FPV stream; OTA is paused then
 #endif
  
 void setup() {
@@ -206,7 +207,9 @@ void setup() {
 }
 
 void loop() {
-#ifndef FPV
+#ifdef FPV
+  if (!streamActive) ArduinoOTA.handle();  // OTA only when nobody watches the stream (avoids stutter)
+#else
   ArduinoOTA.handle();
   delay(5);
 #endif
