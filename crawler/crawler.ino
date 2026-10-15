@@ -171,6 +171,15 @@ static const char* _STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %
 httpd_handle_t camera_httpd = NULL;
 httpd_handle_t stream_httpd = NULL;
 volatile bool streamActive = false;  // true while a client is watching the FPV stream; OTA is paused then
+// Web control state: set by the HTTP handler, applied in loop() (keeps I2C access in one task)
+#define WEB_TIMEOUT 500               // ms without web command -> stop motors and fire
+volatile int16_t webX = 0;            // XY pad, -512..512 like the joystick
+volatile int16_t webY = 0;
+volatile bool webFire = false;
+volatile bool webNew = false;         // new XY command waiting
+volatile bool webActive = false;      // web control currently driving
+volatile unsigned long lastWebCmd = 0;
+volatile int8_t webLightReq = -1;     // -1 = no request, 0 = off, 1 = full light
 #endif
  
 void setup() {
@@ -209,6 +218,7 @@ void setup() {
 void loop() {
 #ifdef FPV
   if (!streamActive) ArduinoOTA.handle();  // OTA only when nobody watches the stream (avoids stutter)
+  handleWebControl();
 #else
   ArduinoOTA.handle();
   delay(5);

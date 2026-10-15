@@ -1,52 +1,5 @@
 #ifdef FPV
-static const char PROGMEM INDEX_HTML[] = R"rawliteral(
-<html>
-  <head>
-    <title>RC Crawler 2d</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-      body { font-family: Arial; text-align: center; margin:0px auto; padding-top: 30px;}
-      table { margin-left: auto; margin-right: auto; }
-      td { padding: 8 px; }
-      .button {
-        background-color: #2f4468;
-        border: none;
-        color: white;
-        padding: 10px 20px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 18px;
-        margin: 6px 3px;
-        cursor: pointer;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -khtml-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-        -webkit-tap-highlight-color: rgba(0,0,0,0);
-      }
-      img {  width: auto ;
-        max-width: 100% ;
-        height: auto ; 
-      }
-    </style>
-  </head>
-  <body>
-    <h1>RC Crawler 2d</h1>
-    <img src="" id="photo" >
-   <script>
-   function toggleCheckbox(x) {
-     var xhr = new XMLHttpRequest();
-     xhr.open("GET", "/action?go=" + x, true);
-     xhr.send();
-   }
-   window.onload = document.getElementById("photo").src = window.location.href.slice(0, -1) + ":81/stream";
-  </script>
-  </body>
-</html>
-)rawliteral";
+#include "index_html.h"
 
 static esp_err_t index_handler(httpd_req_t *req){
   httpd_resp_set_type(req, "text/html");
@@ -118,6 +71,7 @@ static esp_err_t cmd_handler(httpd_req_t *req){
   char*  buf;
   size_t buf_len;
   char variable[32] = {0,};
+  char xs[8] = {0,}, ys[8] = {0,}, fs[4] = {0,}, vs[4] = {0,};
   
   buf_len = httpd_req_get_url_query_len(req) + 1;
   if (buf_len > 1) {
@@ -128,6 +82,11 @@ static esp_err_t cmd_handler(httpd_req_t *req){
     }
     if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
       if (httpd_query_key_value(buf, "go", variable, sizeof(variable)) == ESP_OK) {
+        // optional parameters for web control: x, y (-512..512), f (fire 0/1), v (light 0/1)
+        httpd_query_key_value(buf, "x", xs, sizeof(xs));
+        httpd_query_key_value(buf, "y", ys, sizeof(ys));
+        httpd_query_key_value(buf, "f", fs, sizeof(fs));
+        httpd_query_key_value(buf, "v", vs, sizeof(vs));
       } else {
         free(buf);
         httpd_resp_send_404(req);
@@ -164,6 +123,17 @@ static esp_err_t cmd_handler(httpd_req_t *req){
     Serial.println("Backward");
     processJoystickInput(0, webSpeed);
   }
+  else if(!strcmp(variable, "xy")) {      // XY pad + fire, sent repeatedly while touched
+    webX = constrain(atoi(xs), -512, 512);
+    webY = constrain(atoi(ys), -512, 512);
+    webFire = (atoi(fs) != 0);
+    lastWebCmd = millis();
+    webActive = true;
+    webNew = true;
+  }
+  else if(!strcmp(variable, "light")) {   // full front light on/off
+    webLightReq = (atoi(vs) != 0) ? 1 : 0;
+  }
   else if(!strcmp(variable, "stop")) {
     Serial.println("Stop");
     stopMotors();
@@ -181,6 +151,29 @@ static esp_err_t cmd_handler(httpd_req_t *req){
 }
 #endif
 #ifdef FPV
+// Apply web commands in loop() context; stop if the page stops sending
+void handleWebControl() {
+  static bool fireOn = false;
+  if (webLightReq >= 0) {
+    if (crawlerType == CRAWLER_PCA) setFrontLight(webLightReq ? 65 : 0);
+    webLightReq = -1;
+  }
+  if (!webActive) return;
+  bool fireWanted = webFire;
+  if (millis() - lastWebCmd > WEB_TIMEOUT) {   // page released or connection lost
+    webActive = false;
+    fireWanted = false;
+    stopMotors();
+  } else if (webNew) {
+    webNew = false;
+    processJoystickInput(webX, webY);
+  }
+  if (fireWanted != fireOn) {
+    fireOn = fireWanted;
+    if (crawlerType == CRAWLER_PCA) setLed(fireOut, fireOn ? 4095 : 0);
+  }
+}
+
 void startCameraServer(){
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.server_port = 80;
