@@ -1,0 +1,14 @@
+# Lokale Zugangsdaten (nie auf GitHub!)
+Credentials.h
+.env
+
+# Build-Artefakte
+build/
+.arduino-build*/
+*.bin
+*.elf
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+Desktop.ini
