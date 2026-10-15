@@ -12,7 +12,7 @@ void setupWifi() {
   Serial << "Current MAC address of the ESP: " << WiFi.macAddress() << endl;
   WiFi.begin(ssid, password);
   int connectionAttempts = 0;
-  while (WiFi.status() != WL_CONNECTED && connectionAttempts < 20) {
+  while (WiFi.status() != WL_CONNECTED && connectionAttempts < 40) {   // up to 20 s, the AP can be slow after a reboot
     if (crawlerType == CRAWLER_PCA) {
       setLed(whiteLeft, (millis() % 1000) < 500 ? 4000 : 0);
       setLed(whiteRight, (millis() % 1000) < 500 ? 4000 : 0);
@@ -42,6 +42,7 @@ void setupWifi() {
     // No WiFi: stop the background reconnect (it hops channels) and stay on a
     // fixed channel so the joystick can find us via ESP-NOW
     Serial << "\nWiFi not available - ESP-NOW only on channel " << homeChannel << endl;
+    WiFi.setAutoReconnect(false);   // otherwise it may still connect later, via DHCP instead of the static IP
     WiFi.disconnect();
 #if defined ESP8266
     wifi_set_channel(homeChannel);
