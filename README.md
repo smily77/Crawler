@@ -14,7 +14,8 @@ Remote-controlled tracked vehicles (crawlers) based on ESP microcontrollers. The
 | Control | Hardware | Transport |
 |---|---|---|
 | **TouchOSC** | App on the phone | WiFi, UDP/OSC |
-| **Joystick controller** | ESP32 with analog joystick, push button, 2 switches, 2 NeoPixels | WiFi UDP/OSC, or ESP-NOW as fallback when the joystick finds no WiFi |
+| **Joystick controller** | ESP32 with analog joystick, push button, 2 touch switches, 2 NeoPixels | WiFi UDP/OSC, or ESP-NOW (fallback without WiFi, or switched manually with touch L+R) |
+| **Web page** (ESP32-CAM only) | Browser on the phone | WiFi, HTTP |
 
 All devices are battery powered.
 
@@ -22,11 +23,11 @@ All devices are battery powered.
 
 | Folder | Contents | Origin |
 |---|---|---|
-| `crawler/` | Firmware for both crawlers (version 10) | `combi10` |
-| `OSC_Joystick/` | Firmware for the joystick controller (version 10) | `OSC_Joystick10` |
+| `crawler/` | Firmware for both crawlers (version 11) | `combi10` |
+| `OSC_Joystick/` | Firmware for the joystick controller (version 11) | `OSC_Joystick10` |
 | `docs/` | Photo and schematics | – |
 
-Version history according to the header comment in `crawler.ino`: 6 lights · 7 front lights · 8 camera · 9 restructured · 10 ESP-NOW handshake.
+Version history according to the header comment in `crawler.ino`: 6 lights · 7 front lights · 8 camera · 9 restructured · 10 ESP-NOW handshake · 11 ESP32 core 3.x, OTA with FPV, web controls, ESP-NOW with buttons, ESP8266 build, manual WiFi/ESP-NOW switch on the joystick.
 
 ---
 
@@ -37,8 +38,8 @@ flowchart LR
     H["Phone<br/>TouchOSC"] -- "UDP/OSC<br/>192.168.0.192:1234" --> R(("WiFi router"))
     J["Joystick controller<br/>ESP32"] -- "UDP/OSC" --> R
     R --> C["Crawler<br/>192.168.0.192"]
-    J -. "ESP-NOW<br/>(only if joystick has no WiFi)" .-> C
-    C -- "MJPEG stream<br/>port 81 (ESP32-CAM only)" --> B["Browser"]
+    J -. "ESP-NOW<br/>(no WiFi or switched manually)" .-> C
+    C -- "MJPEG stream port 81<br/>web page port 80 (ESP32-CAM only)" --> B["Browser"]
 ```
 
 The crawler always listens on UDP/OSC (port 1234) and ESP-NOW at the same time. The sender alone decides which path is used.
@@ -77,31 +78,44 @@ At power-on:
 
 1. NeoPixel #0 lights red.
 2. Connects to WiFi, at most 20 attempts of 0.5 s each. NeoPixel #1 blinks red meanwhile. Afterwards it is off if WiFi is connected, or steady red if not.
-3. ESP-NOW pairing, see [ESP-NOW pairing](#esp-now-pairing).
-4. Selects the transport. **ESP-NOW is only used if the joystick has no WiFi and pairing succeeded.** Otherwise it sends via UDP/OSC.
-5. NeoPixel #0 shows the mode: green for OSC, blue for ESP-NOW.
+3. Selects the mode: **WiFi (OSC) if the joystick could connect, otherwise ESP-NOW.**
+4. In ESP-NOW mode it searches the crawler channel by channel, see [ESP-NOW pairing](#esp-now-pairing).
 
-During operation it sends every 20 ms, even without changes (`repetitive = true`).
+NeoPixel #0 shows the mode: **green** = WiFi/OSC, **blue** = ESP-NOW connected, **orange** = ESP-NOW, searching the crawler.
+
+**Manual switch:** Hold touch switches **L and R together for about 1 s**, then release both. This toggles WiFi ↔ ESP-NOW. Use it when the crawler has no WiFi but the joystick has. Switching to ESP-NOW leaves the WiFi (a neutral OSC packet is sent first, so the crawler stops). Switching to WiFi reconnects; if that fails, the joystick stays on ESP-NOW.
+
+**Automatic mode (optional):** `#define AUTO_MODE_SWITCH` in `OSC_Joystick.ino` (off by default). Then the joystick asks the crawler at startup whether it has WiFi and uses ESP-NOW if not, and falls back to ESP-NOW when its own WiFi is lost for more than 3 s. It is off by default because the crawler may not be running yet when the joystick starts, and to avoid unwanted switching.
+
+**OTA:** hostname `ESP-Joystick` (DHCP address), only available in WiFi mode.
+
+During operation it sends every 20 ms, even without changes (`repetitive = true`). In ESP-NOW mode the joystick searches the crawler again after about 0.5 s of failed sends.
 
 | Control | OSC mode | ESP-NOW mode |
 |---|---|---|
 | Joystick X/Y | `/Crawler/xy1` with 3 arguments (X, Y, button) | `joystick_message` packet |
-| Joystick button | 3rd argument → output "fireOut" (PCA channel 12) | sent as `button1`, but not evaluated by the crawler |
-| Enable button | toggles `enableButton`, the button LED shows the state, sends `/Crawler/toggle1` → brighter front light on the ESP32-CAM crawler | no function |
-| Switch L / R | no function | no function |
+| Joystick button (fire) | 3rd argument → output "fireOut" (PCA channel 12) | `button1` → output "fireOut" |
+| Enable button (full light) | toggles `enableButton`, the button LED shows the state, sends `/Crawler/toggle1` → brighter front light | `button2` → brighter front light |
+| Touch L + R | switch to ESP-NOW | switch to WiFi |
 
-Scaling:
+Scaling: steering is limited to 1/3 in both modes.
 
-- OSC: X is mapped to 0.33…0.66, so steering is damped. Y is inverted and mapped to 1.0…0.0.
-- ESP-NOW: the center is subtracted, a deadzone of ±50 applied, the value scaled to ±512, X divided by 5 and Y inverted.
+- OSC: X is mapped to 0.33…0.66. Y is inverted and mapped to 1.0…0.0.
+- ESP-NOW: the center is subtracted, a deadzone of ±50 applied, the value scaled to ±512, X divided by 3 and Y inverted.
 
 In joystick mode (3 arguments) the crawler drives without the enable toggle.
 
-### 3. Web interface (ESP32-CAM only)
+### 3. Web page (ESP32-CAM only)
 
-- `http://192.168.0.192/` shows a page "RC Crawler 2d" with the camera image.
-- `http://192.168.0.192:81/stream` delivers the MJPEG stream: VGA with PSRAM, SVGA without. The image is mirrored and flipped (rotated by 180°).
-- `http://192.168.0.192/action?go=forward|backward|left|right|stop` accepts drive commands at a fixed speed `webSpeed = 150`. The page itself has no buttons for them.
+`http://192.168.0.192/` shows the camera image and the controls (page source: `crawler/index_html.h`):
+
+- **XY pad** for tank steering like the TouchOSC pad, steering limited to 1/3 (`STEER_FACTOR`). Releasing the pad stops the crawler.
+- **Light** toggles the full front light, **Fire** is active while held.
+- While the pad or Fire is touched, the page sends `/action?go=xy&x=…&y=…&f=…` every 100 ms (x, y: −512…512). If no command arrives for 500 ms (pad released, tab in the background, connection lost), the crawler stops and switches Fire off.
+- `/action?go=light&v=0|1` switches the full light.
+- The old commands `/action?go=forward|backward|left|right|stop` (fixed speed `webSpeed = 150`) still work.
+
+`http://192.168.0.192:81/stream` delivers the MJPEG stream: VGA with PSRAM, SVGA without. The image is mirrored and flipped (rotated by 180°). **While a client watches the stream, OTA is paused** (the OTA check would make the image stutter); it is available again as soon as the stream is closed.
 
 ---
 
@@ -113,19 +127,22 @@ In joystick mode (3 arguments) the crawler drives without the enable toggle.
 typedef struct joystick_message {
   int16_t x;       // -512 … 512
   int16_t y;       // -512 … 512  (negative = forward)
-  bool button1;
-  bool button2;    // unused
+  bool button1;    // fire (held)
+  bool button2;    // full front light (toggle state)
   uint8_t target;  // unused (intended: 1, 2 or 0 = all)
-} joystick_message;
+} joystick_message;  // 8 bytes
 
 typedef struct pairing_message {
   uint8_t mac_addr[6];
   uint8_t channel;
   bool isPairing;  // true = request, false = confirmation
-} pairing_message;
+  bool hasWlan;    // confirmation only: crawler is connected to WiFi
+} pairing_message;  // 9 bytes
 ```
 
-The crawler distinguishes the two messages by their length.
+The crawler distinguishes the two messages by their length; a `static_assert` makes sure the sizes differ. (In version 10 both were 8 bytes, so joystick packets were taken for pairing messages and never drove the crawler.)
+
+The crawler takes joystick packets without a prior pairing, so the joystick keeps working after a crawler reboot. The packets are only stored in the ESP-NOW callback and applied in `loop()`. If no packet arrives for 500 ms, the crawler stops and switches Fire off.
 
 ### ESP-NOW pairing
 
@@ -137,12 +154,12 @@ sequenceDiagram
         J->>C: Broadcast pairing_message (isPairing = true)
     end
     C->>C: Add joystick as peer
-    C->>J: pairing_message (isPairing = false, own MAC, WiFi channel)
+    C->>J: pairing_message (isPairing = false, own MAC, channel, hasWlan)
     J->>J: Switch to crawler's channel, add crawler as peer
-    J->>C: joystick_message … (only if joystick has no WiFi)
+    J->>C: joystick_message … every 20 ms
 ```
 
-In its confirmation the crawler reports the channel of its WiFi (`homeChannel`). If the joystick finds no crawler on any channel, ESP-NOW is considered unavailable.
+In its confirmation the crawler reports its channel (`homeChannel`). With WiFi this is the channel of the access point. Without WiFi the crawler stops the background reconnect (which hops channels) and stays on **channel 1**. The joystick scans one channel per loop and keeps searching until it finds the crawler, so it can be switched on before the crawler.
 
 ---
 
@@ -161,8 +178,8 @@ In its confirmation the crawler reports the channel of its WiFi (`homeChannel`).
 | WiFi connected | red tail light dimmed (200), front light low |
 | Braking (twice above, then twice below the deadzone) | brake light: red +2000 for 1 s |
 | Reversing (two packets in a row) | white reversing light (400) |
-| `/Crawler/toggle1` in joystick mode | brighter front light (+65) |
-| Joystick button | output "fireOut" (channel 12) fully on |
+| Full light (`/Crawler/toggle1` in joystick mode, ESP-NOW `button2`, web "Light") | brighter front light (+65) |
+| Fire (joystick button, web "Fire") | output "fireOut" (channel 12) fully on |
 
 **Type 2:** The WiFi LED on D7 blinks while connecting and stays on once WiFi is connected.
 
@@ -238,32 +255,33 @@ Required libraries:
 - `Adafruit NeoPixel` (joystick)
 - `ArduinoOTA`, `esp_camera`: included in the board package
 
-**ESP32 board package:** The code uses `ledcSetup`/`ledcAttachPin` and the old ESP-NOW callback signature. It therefore requires Arduino-ESP32 core **2.x**, not 3.x.
+**ESP32 board package:** Tested with Arduino-ESP32 core **3.3.10**. Version checks (`ESP_ARDUINO_VERSION_MAJOR`, `ESP_IDF_VERSION`) keep it compatible with core 2.x. ESP8266 tested with core **3.1.2**.
 
-**Crawler: selection at the top of `crawler/crawler.ino`**
+**Libraries:** `OSC` (CNMAT), `Adafruit PWM Servo Driver Library`, `Streaming`, `Adafruit NeoPixel` (joystick), and your own `Credentials.h`.
 
-| Target | Defines | Board |
+**Crawler:** The platform is taken from the selected board, nothing to edit in the code. `FPV` (camera, web page) is enabled automatically on the ESP32.
+
+| Target | Board | Settings |
 |---|---|---|
-| ESP32-CAM | `#define ESP32`, `#define FPV` | "AI Thinker ESP32-CAM" |
-| Wemos D1 mini | `#define ESP8266`, comment out `FPV` | "LOLIN(WEMOS) D1 R2 & mini" |
+| ESP32-CAM | "AI Thinker ESP32-CAM" (`esp32:esp32:esp32cam`) | Partition scheme **"Minimal SPIFFS (1.9MB APP with OTA)"** – the default "Huge APP" has no OTA partition. Serial upload may need 115200 baud. |
+| Wemos D1 mini | "LOLIN(WEMOS) D1 R2 & mini" (`esp8266:esp8266:d1_mini`) | OTA port 8266 |
 
 `DEBUG` and `FIXESP` enable additional serial output (115200 baud).
 
-**Joystick:** board "ESP32 Dev Module", or whichever matches the board used.
+**Joystick:** board "ESP32 Dev Module" (`esp32:esp32:esp32`), default partition scheme (with OTA).
+
+**OTA:** Crawler `ESP-Crawler` (192.168.0.192), joystick `ESP-Joystick` (WiFi mode only). The first upload with OTA support has to be done via USB.
 
 ---
 
 ## Known issues / open tasks
 
-This list comes from reading the version 10 code and is the basis for the upcoming fixes:
+Fixed in version 11: WiFi/ESP-NOW fallback (manual switch, optional automatic mode), ESP8266 build, OTA on the ESP32-CAM, ESP-NOW buttons, L/R switches, web page controls, ESP-NOW message size collision, crash on the Wemos crawler (PCA9685 accessed without PCA), PWM range on ESP8266 core 3.x.
 
-1. **WiFi/ESP-NOW fallback:** Only the joystick decides, and only once at startup. If the joystick has WiFi but the crawler does not, the joystick sends UDP into the void. There is no switch-over if WiFi is lost later.
-2. **ESP8266 build:** `crawler/autoPairEspNow.ino` and `setup()` use the ESP32 ESP-NOW API (`esp_now_peer_info_t`, `esp_err_t`, `ESP_OK`). The ESP8266 variant in `ESP_Now.ino` is commented out. Whether the Wemos crawler compiles with version 10 needs to be checked.
-3. **OTA on the ESP32-CAM:** `ArduinoOTA.handle()` is only called without `FPV`, so OTA is effectively disabled on the camera crawler.
-4. **Joystick center hard-coded and inconsistent:** OSC uses `midX = 1947`, `midY = 1936`, ESP-NOW uses `joystickCenterX = 1935`, `joystickCenterY = 1947`. X and Y appear to be swapped.
-5. **ESP-NOW without buttons:** `button1` and `target` are not evaluated by the crawler, and the enable button and front light do not work in ESP-NOW mode.
-6. **Pairing:** The crawler accepts any pairing request, and `isPaired` is never reset. The joystick sends to the hard-coded `crawlerMAC` instead of the MAC reported during pairing. This only works because the crawler sets exactly that MAC.
-7. **Same IP/MAC for both crawlers:** They cannot be operated at the same time.
-8. **Switches L/R:** They are initialized but not used.
-9. **Web page:** The `/action` handler exists, but the page has no control buttons.
-10. **TouchOSC layout:** The layout file is still missing from the repository and will be added later.
+Still open:
+
+1. **Joystick center hard-coded and inconsistent:** OSC uses `midX = 1947`, `midY = 1936`, ESP-NOW uses `joystickCenterX = 1935`, `joystickCenterY = 1947`. X and Y appear to be swapped. A calibration at startup would help.
+2. **Pairing:** The crawler accepts any pairing request and any joystick packet.
+3. **Same IP/MAC for both crawlers:** They cannot be operated at the same time.
+4. **OSC has no timeout:** If the WiFi connection drops while driving via OSC, the crawler keeps the last command (TouchOSC only sends on changes, so a timeout cannot simply be added).
+5. **TouchOSC layout:** The layout file is still missing from the repository and will be added later.

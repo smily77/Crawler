@@ -38,6 +38,18 @@ void sendEnableButton() {
     Udp.endPacket();
     oscMsg1.empty();
 }
+
+// Neutral position, sent before leaving WiFi mode (OSC has no timeout on the crawler)
+void sendOSCStop() {
+    OSCMessage oscMsg("/Crawler/xy1");
+    oscMsg.add(0.5f);
+    oscMsg.add(0.5f);
+    oscMsg.add(0.0f);
+    Udp.beginPacket(remoteIP, remotePort);
+    oscMsg.send(Udp);
+    Udp.endPacket();
+    oscMsg.empty();
+}
 /*
 // ESP-Now
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
@@ -48,7 +60,8 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 */
 
 void sendEspnowJoyStick(int rawX, int rawY, int btnState) {
-  dataToSend.button1 = !btnState;
+  dataToSend.button1 = btnState;       // fire while the joystick button is held
+  dataToSend.button2 = enableButton;   // full front light
   // Map joystick values from 0-4095 to -512 to 512
   // Apply center offset and deadzone
   int joyX = rawX - joystickCenterX;
@@ -66,21 +79,22 @@ void sendEspnowJoyStick(int rawX, int rawY, int btnState) {
   // Constrain to -512 to 512 range
   joyX = constrain(map(joyX, -joystickCenterX, joystickCenterX, -512, 512), -512, 512);
   joyY = constrain(map(joyY, -joystickCenterY, joystickCenterY, -512, 512), -512, 512);
-joyX = joyX/5;
+  joyX = joyX/3;                       // limit steering to 1/3 like OSC (0.33..0.66)
   joyY = - joyY;
   
   // Update data to send
   dataToSend.x = joyX;
   dataToSend.y = joyY;
-  if (lastSentButtonState == dataToSend.button1 &&  lastSentJoyX == dataToSend.x && lastSentJoyY == dataToSend.y && (!repetitive)) {
+  bool changed = !(lastSentButtonState == dataToSend.button1 &&  lastSentJoyX == dataToSend.x && lastSentJoyY == dataToSend.y);
+  if (!changed && !repetitive) {
     if (false) Serial.println("nothing to send");
   }
   else {
     lastSentButtonState = dataToSend.button1;
     lastSentJoyX = dataToSend.x;
     lastSentJoyY = dataToSend.y;
-    esp_err_t result = esp_now_send(crawlerMAC, (uint8_t *)&dataToSend, sizeof(dataToSend));
-    if (true) {
+    esp_err_t result = esp_now_send(controllerMacAddress, (uint8_t *)&dataToSend, sizeof(dataToSend));
+    if (changed) {                     // print only changes (sent every 20 ms)
       if (result != ESP_OK) Serial.println("Error sending the data");
       Serial.print("X: ");
       Serial.print(joyX);

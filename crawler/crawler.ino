@@ -3,9 +3,13 @@
 // 8 - camera
 // 9 - restructured
 // 10 - ESP-Now Handshake
+// 11 - core 3.x, OTA with FPV, web controls, ESP-NOW buttons and timeout, ESP8266 build
+// ESP8266 or ESP32 is defined by the board core, no need to set it here
 //#define ESP8266
-#define ESP32
-#define FPV
+//#define ESP32
+#if defined ESP32
+  #define FPV          // ESP32-CAM crawler with camera stream and web control
+#endif
 #define DEBUG true
 #define FIXESP true
 #if defined ESP8266
@@ -151,11 +155,14 @@ typedef struct joystick_message {
 } joystick_message;
 
 joystick_message receivedData;
+volatile bool espnowNew = false;           // new joystick packet waiting (set in ESP-NOW callback)
+volatile unsigned long lastEspnowCmd = 0;  // time of last joystick packet
+#define ESPNOW_TIMEOUT 500                 // ms without joystick packet -> stop motors and fire
 
 // Transmitter MAC address (filled in during pairing)
 uint8_t transmitterMacAddress[6] = {0};
 bool isPaired = false;
-uint8_t homeChannel;
+uint8_t homeChannel = 1;  // WiFi channel (fixed to 1 when WiFi is not available)
 
 
 
@@ -206,9 +213,7 @@ void setup() {
     else {Serial << "mDNS responder started: " << hostname << ".local" << endl;}
   setupOTA();
   udp.begin(localPort);
-  if (esp_now_init() != ESP_OK) if (DEBUG) Serial << "Error initializing ESP-NOW" << endl;
-  esp_now_register_recv_cb(OnDataRecv);
-  esp_now_register_send_cb(OnDataSent);
+  if (!initEspNow()) if (DEBUG) Serial << "Error initializing ESP-NOW" << endl;
 #ifdef FPV
   startCameraServer();
 #endif
@@ -223,5 +228,6 @@ void loop() {
   ArduinoOTA.handle();
   delay(5);
 #endif
+  handleEspnowControl();
   checkOsc();
 }

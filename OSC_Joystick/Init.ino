@@ -2,7 +2,7 @@ void initPins() {
   pinMode(joystickXPin, INPUT);
   pinMode(joystickYPin, INPUT);
   pinMode(joystickBtnPin, INPUT_PULLUP);
-  pinMode(enableBtnPin,INPUT_PULLUP);
+  pinMode(enableBtnPin,INPUT);   // GPIO36 is input-only (no internal pull-up)
   pinMode(switchL,INPUT);
   pinMode(switchR,INPUT);
   pinMode(enableLedPin,OUTPUT);
@@ -24,7 +24,7 @@ void setLed(int ledNr, unsigned long color) {
 
 boolean initWlan() {
   setLed(leftPixel,0x000000);
-  WiFi.mode(WIFI_AP_STA);
+  WiFi.mode(WIFI_STA);
   WiFi.disconnect(true);
   WiFi.begin(ssid, password);
   int connectionAttempts = 0;
@@ -44,6 +44,24 @@ boolean initWlan() {
     setLed(leftPixel,0x200000);
     return false;
   }
+}
+
+void setupOTA() {
+  ArduinoOTA.setHostname(hostname);
+  ArduinoOTA.onStart([]() {
+    Serial << "OTA start" << endl;
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial << "\nOTA end" << endl;
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("OTA error[%u]\n", error);
+  });
+  ArduinoOTA.begin();
+  Serial << "OTA ready: " << hostname << " / " << WiFi.localIP() << endl;
 }
 /*
 boolean initESPNOW() {

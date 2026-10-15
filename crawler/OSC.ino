@@ -16,7 +16,7 @@ void handleXYMessage(OSCMessage &msg) {
   if (msg.size() == 3) {
     fire = (msg.getFloat(2) > 0.5);
     Serial << "   Fire: " << fire << endl;
-    if (fire) setLed(fireOut,4095); else setLed(fireOut,0);
+    if (crawlerType == CRAWLER_PCA) setLed(fireOut, fire ? 4095 : 0);  // PCA only (pwm not initialised otherwise)
     isPhone = false;
     processJoystickInput(x, y);         
   }

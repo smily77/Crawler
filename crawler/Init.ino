@@ -38,6 +38,16 @@ void setupWifi() {
     else if (crawlerType == CRAWLER_GPIO) {
       digitalWrite(wifiLed,HIGH);
     }
+  } else {
+    // No WiFi: stop the background reconnect (it hops channels) and stay on a
+    // fixed channel so the joystick can find us via ESP-NOW
+    Serial << "\nWiFi not available - ESP-NOW only on channel " << homeChannel << endl;
+    WiFi.disconnect();
+#if defined ESP8266
+    wifi_set_channel(homeChannel);
+#elif defined ESP32
+    esp_wifi_set_channel(homeChannel, WIFI_SECOND_CHAN_NONE);
+#endif
   }
 }
 
@@ -48,7 +58,8 @@ void initPcaCrawler() {
 
 void initGpioCrawler() {
   #if defined ESP8266
-    analogWriteFreq(GPIO_PWM_FREQ);  
+    analogWriteFreq(GPIO_PWM_FREQ);
+    analogWriteRange(GPIO_PWM_MAX);   // core 3.x defaults to 255, the code uses 0..1023  
     pinMode(MOTOR1_GPIO_PIN1, OUTPUT);
     pinMode(MOTOR1_GPIO_PIN2, OUTPUT);
     pinMode(MOTOR2_GPIO_PIN1, OUTPUT);
