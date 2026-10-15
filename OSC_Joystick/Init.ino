@@ -2,11 +2,11 @@ void initPins() {
   pinMode(joystickXPin, INPUT);
   pinMode(joystickYPin, INPUT);
   pinMode(joystickBtnPin, INPUT_PULLUP);
-  pinMode(taster,INPUT_PULLUP);
+  pinMode(enableBtnPin,INPUT_PULLUP);
   pinMode(switchL,INPUT);
   pinMode(switchR,INPUT);
-  pinMode(tasterLed,OUTPUT);
-  digitalWrite(tasterLed,LOW);
+  pinMode(enableLedPin,OUTPUT);
+  digitalWrite(enableLedPin,LOW);
   pinMode(intLed,OUTPUT);
   digitalWrite(intLed,HIGH);
 }
@@ -29,7 +29,7 @@ boolean initWlan() {
   WiFi.begin(ssid, password);
   int connectionAttempts = 0;
   while (WiFi.status() != WL_CONNECTED && connectionAttempts < 20) {
-    setLed(leftPixel, (millis() % 1000) < 500 ? 0x200000 : 0x000000); // Gleichmäßigeres Blinken
+    setLed(leftPixel, (millis() % 1000) < 500 ? 0x200000 : 0x000000); // More even blinking
     delay(500);
     Serial.print(".");
     connectionAttempts++;
@@ -74,10 +74,10 @@ boolean initESPNOW() {
 
 boolean initESPNOW() {
   if (esp_now_init() != ESP_OK) {
-    Serial.println("Fehler bei der ESP-NOW Initialisierung");
+    Serial.println("Error initializing ESP-NOW");
     return false;
   } 
-  // Callbacks registrieren
+  // Register callbacks
   esp_now_register_recv_cb(OnDataRecv);
   esp_now_register_send_cb(OnDataSent);
   findController();

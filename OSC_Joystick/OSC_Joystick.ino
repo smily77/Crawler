@@ -1,6 +1,6 @@
-//Funktioniert mit combi2 und combi3
-//2-ESP-Now
-//10 - ESP Handshake
+// Works with combi2 and combi3
+// 2 - ESP-NOW
+// 10 - ESP-NOW handshake
 #include <esp_now.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -12,10 +12,10 @@
 #define DEBUG true
 #define FIXESP true
 
-// WLAN Zugangsdaten
+// WiFi credentials
 #include <Credentials.h>
 
-// IP und Port des Empfängers (TouchOSC kompatibel)
+// IP and port of the receiver (TouchOSC compatible)
 const IPAddress remoteIP(192, 168, 0, 192);
 const unsigned int remotePort = 1234;
 const unsigned int homePort = 8888;
@@ -31,30 +31,30 @@ uint8_t crawlerMAC[] = {0x3C, 0x61, 0x05, 0xD0, 0x53, 0x5C};
 #define joystickXPin 33
 #define joystickYPin 32
 #define joystickBtnPin 25  // Optional button pin, change as needed
-#define taster 36
+#define enableBtnPin 36
 #define switchR 34
 #define switchL 35
-#define tasterLed 27
+#define enableLedPin 27
 #define pixelPin 14
 #define noOfPixels 2
 #define leftPixel 1
 #define rightPixel 0
 #define intLed 5
-// Schwellwert für minimale Änderungserkennung
-const float threshold = 0.02; // ca. 2% Änderung
+// Threshold for detecting a minimal change
+const float threshold = 0.02; // approx. 2% change
 
 // ***********ESP-NOW **************
-// Struktur für Pairing-Nachricht
+// Structure of the pairing message
 typedef struct pairing_message {
   uint8_t mac_addr[6];
   uint8_t channel;
   bool isPairing;
 } pairing_message;
 
-// Controller MAC-Adresse (wird während des Pairings gefüllt)
+// Controller MAC address (filled in during pairing)
 uint8_t controllerMacAddress[6] = {0};
 bool isPaired = false;
-uint8_t homeChannel = 1; // Startkanal
+uint8_t homeChannel = 1; // Start channel
 
 typedef struct joystick_message {
   int16_t x;       // X-axis value (-512 to 512)
@@ -92,7 +92,7 @@ int lastSentJoyX = 0;
 
 int lastSentJoyY = 0;
 
-// Hilfsfunktion zur Skalierung
+// Helper function for scaling
 float mapFloat(long x, long in_min, long in_max, float out_min, float out_max) {
   return (float)(x - in_min) * (out_max - out_min) / (float)(in_max - in_min) + out_min;
 
@@ -115,17 +115,17 @@ void setup() {
 
 void loop() {
   
-  // Joystick Werte einlesen (0-4095)
+  // Read joystick values (0-4095)
   int joyX = analogRead(joystickXPin);
   int joyY = analogRead(joystickYPin);
-  int btnState = !digitalRead(joystickBtnPin); // invertiert, Pullup
+  int btnState = !digitalRead(joystickBtnPin); // inverted, pull-up
   if (udpMsg) {
     sendOSCJoyStick(joyX, joyY, btnState);
   
-    if (!digitalRead(taster)) {
+    if (!digitalRead(enableBtnPin)) {
       enableButton = ! enableButton;
-      digitalWrite(tasterLed,enableButton);
-      while(!digitalRead(taster)) {
+      digitalWrite(enableLedPin,enableButton);
+      while(!digitalRead(enableBtnPin)) {
         delay(10);
       }
       sendEnableButton();    
@@ -134,5 +134,5 @@ void loop() {
   if (!udpMsg) {
     sendEspnowJoyStick(joyX, joyY, btnState);
   }
-  delay(20); // Kurze Pause zur Entlastung der CPU
+  delay(20); // Short pause to relieve the CPU
 }

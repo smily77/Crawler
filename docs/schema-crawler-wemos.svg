@@ -9,7 +9,7 @@
     .w { stroke-width:2; fill:none; }
   </style>
 
-  <text x="30" y="34" class="title">Crawler Typ 2 – Wemos D1 mini (ESP8266), Motoren direkt an GPIO</text>
+  <text x="30" y="34" class="title">Crawler type 2 – Wemos D1 mini (ESP8266), motors directly on GPIO</text>
 
   <!-- Wemos -->
   <rect x="40" y="80" width="240" height="280" rx="8" class="box"/>
@@ -21,7 +21,7 @@
     <text x="272" y="254">D2 (GPIO4)</text>
     <text x="272" y="324">D7 (GPIO13)</text>
   </g>
-  <text x="56" y="290" class="note">PWM 20 kHz, 10 Bit</text>
+  <text x="56" y="290" class="note">PWM 20 kHz, 10 bit</text>
 
   <g stroke="#7a4b00" class="w">
     <line x1="280" y1="140" x2="440" y2="140"/>
@@ -45,14 +45,14 @@
   <text x="694" y="173" class="h" text-anchor="middle">M</text>
   <circle cx="694" cy="238" r="22" fill="#fff" stroke="#2f4468" stroke-width="2"/>
   <text x="694" y="243" class="h" text-anchor="middle">M</text>
-  <text x="726" y="172" class="pin">Motor 1 links</text>
-  <text x="726" y="242" class="pin">Motor 2 rechts</text>
+  <text x="726" y="172" class="pin">Motor 1 left</text>
+  <text x="726" y="242" class="pin">Motor 2 right</text>
 
-  <!-- WLAN-LED -->
+  <!-- WiFi LED -->
   <line x1="280" y1="320" x2="440" y2="320" stroke="#2e7d32" class="w"/>
   <circle cx="450" cy="320" r="9" fill="#66bb6a" stroke="#333" stroke-width="1.2"/>
-  <text x="470" y="324" class="pin">WLAN-LED (blinkt beim Verbinden, an = verbunden)</text>
+  <text x="470" y="324" class="pin">WiFi LED (blinks while connecting, on = connected)</text>
 
-  <text x="40" y="400" class="note">Typ-Erkennung: Kein Gerät auf I²C-Adresse 0x40 → Typ 2 (GPIO). Der I²C-Test läuft kurz über GPIO4/GPIO5, danach werden sie Motor-Ausgänge.</text>
-  <text x="40" y="420" class="note">Keine Fahrzeugbeleuchtung. Versorgung über Akku; Akkutyp und genaue DRV8833-Beschaltung gehen aus dem Code nicht hervor.</text>
+  <text x="40" y="400" class="note">Type detection: no device on I²C address 0x40 → type 2 (GPIO). The I²C probe briefly uses GPIO4/GPIO5, which then become motor outputs.</text>
+  <text x="40" y="420" class="note">No vehicle lights. Battery powered; battery type and exact DRV8833 wiring are not defined in the code.</text>
 </svg>

@@ -1,29 +1,29 @@
 //OSC
 void sendOSCJoyStick(int joyX, int joyY, int btnState) {
 
-  // Skalierung auf TouchOSC-Feld (0 bis 1)
+  // Scale to TouchOSC field (0 to 1)
   float oscX = mapFloat(joyX, 2*midY-maxY, maxY, 0.33, 0.66);
   float oscY = mapFloat(joyY, 2*midX-maxX, maxX, 1.0, 0.0);
 
-  // Prüfe, ob Änderung vorliegt (inkl. Button)
+  // Check for a change (including button)
   if (abs(oscX - lastX) > threshold || abs(oscY - lastY) > threshold || btnState != lastBtn || repetitive) {
   
-    // OSC Nachricht vorbereiten
+    // Prepare OSC message
     OSCMessage oscMsg("/Crawler/xy1");
     oscMsg.add(oscX);
     oscMsg.add(oscY);
-    oscMsg.add(float(btnState)); // optionaler Button
+    oscMsg.add(float(btnState)); // optional button
 
-    // OSC Nachricht senden
+    // Send OSC message
     Udp.beginPacket(remoteIP, remotePort);
     oscMsg.send(Udp);
     Udp.endPacket();
     oscMsg.empty();
 
-    // Debug-Ausgabe seriell
-    Serial.printf("Gesendet: X: %.2f, Y: %.2f, Btn: %d\n", oscX, oscY, btnState);
+    // Serial debug output
+    Serial.printf("Sent: X: %.2f, Y: %.2f, Btn: %d\n", oscX, oscY, btnState);
 
-    // Aktualisiere letzte Werte
+    // Update last values
     lastX = oscX;
     lastY = oscY;
     lastBtn = btnState;    

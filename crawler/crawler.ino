@@ -1,7 +1,7 @@
-// 6 - Lampen
-// 7- vorderLampen
-// 8 - Kammera
-// 9 - strukturiert
+// 6 - lights
+// 7 - front lights
+// 8 - camera
+// 9 - restructured
 // 10 - ESP-Now Handshake
 //#define ESP8266
 #define ESP32
@@ -13,7 +13,7 @@
   #include <espnow.h>
   #include <ESP8266mDNS.h>  // Include mDNS library for hostname resolution
   extern "C" {
-  #include "user_interface.h" // Notwendig für wifi_set_macaddr()
+  #include "user_interface.h" // Required for wifi_set_macaddr()
   #define SDA_PIN 4
   #define SCL_PIN 5
 }
@@ -120,7 +120,7 @@ uint8_t crawlerType = CRAWLER_PCA;
 #define MOTOR_DEADZONE 100  // Values between -DEADZONE and DEADZONE will be treated as 0
 
 // WiFi settings
-// WLAN Zugangsdaten
+// WiFi credentials
 #include <Credentials.h>
 const char* hostname = "ESP-Crawler";  // Hostname for OTA identification
 IPAddress staticIP(192, 168, 0, 192);  // Static IP for the crawler
@@ -152,7 +152,7 @@ typedef struct joystick_message {
 
 joystick_message receivedData;
 
-// Transmitter MAC-Adresse (wird während des Pairings gefüllt)
+// Transmitter MAC address (filled in during pairing)
 uint8_t transmitterMacAddress[6] = {0};
 bool isPaired = false;
 uint8_t homeChannel;
@@ -160,7 +160,7 @@ uint8_t homeChannel;
 
 
 
-boolean isHandy = false;
+boolean isPhone = false;
 boolean fire = false;
 
 #ifdef FPV
@@ -180,7 +180,7 @@ void setup() {
 #ifdef FPV
   camSetup();
 #endif
-#if defined ESP32  // wegen MPA conflikt mit SDA
+#if defined ESP32  // because of PCA conflict with SDA
   pinMode(MOTOR1_GPIO_PIN1,OUTPUT);
   digitalWrite(MOTOR1_GPIO_PIN1,HIGH);
   pinMode(4,OUTPUT);
@@ -196,7 +196,7 @@ void setup() {
     else {Serial << "mDNS responder started: " << hostname << ".local" << endl;}
   setupOTA();
   udp.begin(localPort);
-  if (esp_now_init() != ESP_OK) if (DEBUG) Serial << "Fehler bei der ESP-NOW Initialisierung" << endl;
+  if (esp_now_init() != ESP_OK) if (DEBUG) Serial << "Error initializing ESP-NOW" << endl;
   esp_now_register_recv_cb(OnDataRecv);
   esp_now_register_send_cb(OnDataSent);
 #ifdef FPV

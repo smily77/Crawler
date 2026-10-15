@@ -10,18 +10,18 @@
     .w { stroke-width:2; fill:none; }
   </style>
 
-  <text x="30" y="34" class="title">Crawler Typ 1 – ESP32-CAM mit PCA9685 (Motoren + Licht)</text>
+  <text x="30" y="34" class="title">Crawler type 1 – ESP32-CAM with PCA9685 (motors + lights)</text>
 
   <!-- ESP32-CAM -->
   <rect x="40" y="80" width="220" height="280" rx="8" class="box"/>
   <text x="56" y="104" class="h">ESP32-CAM (AI-Thinker)</text>
   <rect x="60" y="120" width="110" height="56" rx="4" class="sub"/>
-  <text x="72" y="143" class="pin">Kamera OV2640</text>
-  <text x="72" y="162" class="note">intern verdrahtet</text>
+  <text x="72" y="143" class="pin">Camera OV2640</text>
+  <text x="72" y="162" class="note">wired internally</text>
   <text x="252" y="204" class="pin" text-anchor="end">GPIO13 (SDA)</text>
   <text x="252" y="234" class="pin" text-anchor="end">GPIO14 (SCL)</text>
-  <text x="56" y="280" class="note">GPIO4: Blitz-LED (Ausgang, aus)</text>
-  <text x="56" y="298" class="note">GPIO12: beim Start HIGH</text>
+  <text x="56" y="280" class="note">GPIO4: flash LED (output, off)</text>
+  <text x="56" y="298" class="note">GPIO12: HIGH at startup</text>
   <text x="56" y="322" class="note">Video: http://192.168.0.192/</text>
   <text x="56" y="340" class="note">Stream: Port 81 /stream</text>
 
@@ -34,7 +34,7 @@
   <!-- PCA9685 -->
   <rect x="380" y="80" width="200" height="460" rx="8" class="box"/>
   <text x="396" y="104" class="h">PCA9685</text>
-  <text x="396" y="122" class="note">Adresse 0x40, 100 Hz, 12 Bit</text>
+  <text x="396" y="122" class="note">address 0x40, 100 Hz, 12 bit</text>
   <text x="390" y="204" class="pin">SDA</text>
   <text x="390" y="234" class="pin">SCL</text>
   <g class="pin" text-anchor="end">
@@ -51,7 +51,7 @@
     <text x="572" y="524">CH12</text>
   </g>
 
-  <!-- Motor-Leitungen -->
+  <!-- Motor wires -->
   <g stroke="#7a4b00" class="w">
     <line x1="580" y1="150" x2="680" y2="150"/>
     <line x1="580" y1="180" x2="680" y2="180"/>
@@ -74,8 +74,8 @@
   <text x="884" y="183" class="h" text-anchor="middle">M</text>
   <circle cx="884" cy="238" r="22" fill="#fff" stroke="#2f4468" stroke-width="2"/>
   <text x="884" y="243" class="h" text-anchor="middle">M</text>
-  <text x="884" y="148" class="pin" text-anchor="middle">Motor 1 links</text>
-  <text x="884" y="278" class="pin" text-anchor="middle">Motor 2 rechts</text>
+  <text x="884" y="148" class="pin" text-anchor="middle">Motor 1 left</text>
+  <text x="884" y="278" class="pin" text-anchor="middle">Motor 2 right</text>
 
   <!-- LEDs -->
   <g class="w">
@@ -97,15 +97,15 @@
     <circle cx="670" cy="520" r="9" fill="#ce93d8"/>
   </g>
   <g class="pin">
-    <text x="690" y="304">rot rechts – Rück-/Bremslicht</text>
-    <text x="690" y="334">weiss rechts – Rückfahrlicht</text>
-    <text x="690" y="364">vorne rechts – Frontlicht</text>
-    <text x="690" y="414">rot links – Rück-/Bremslicht</text>
-    <text x="690" y="444">weiss links – Rückfahrlicht</text>
-    <text x="690" y="474">vorne links – Frontlicht</text>
-    <text x="690" y="524">„fireOut“ – Joystick-Knopf</text>
+    <text x="690" y="304">red right – tail/brake light</text>
+    <text x="690" y="334">white right – reversing light</text>
+    <text x="690" y="364">front right – front light</text>
+    <text x="690" y="414">red left – tail/brake light</text>
+    <text x="690" y="444">white left – reversing light</text>
+    <text x="690" y="474">front left – front light</text>
+    <text x="690" y="524">"fireOut" – joystick button</text>
   </g>
 
-  <text x="40" y="590" class="note">Typ-Erkennung: Antwortet ein Gerät auf I²C-Adresse 0x40, läuft der Crawler als Typ 1 (PCA). LEDs jeweils mit Vorwiderstand.</text>
-  <text x="40" y="610" class="note">Versorgung über Akku. Akkutyp, Spannungsregler und die genaue DRV8833-Beschaltung gehen aus dem Code nicht hervor und sind hier nicht dargestellt.</text>
+  <text x="40" y="590" class="note">Type detection: if a device answers on I²C address 0x40, the crawler runs as type 1 (PCA). Each LED with series resistor.</text>
+  <text x="40" y="610" class="note">Battery powered. Battery type, voltage regulator and exact DRV8833 wiring are not defined in the code and are not shown here.</text>
 </svg>

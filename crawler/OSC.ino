@@ -9,7 +9,7 @@ void handleXYMessage(OSCMessage &msg) {
   int16_t x = (int16_t)(xyPadX * 512);
   int16_t y = (int16_t)(xyPadY * 512);    
   if (msg.size() == 2){
-    isHandy = true;
+    isPhone = true;
     if (toggleState) processJoystickInput(x, y);
       else stopMotors();
   }
@@ -17,7 +17,7 @@ void handleXYMessage(OSCMessage &msg) {
     fire = (msg.getFloat(2) > 0.5);
     Serial << "   Fire: " << fire << endl;
     if (fire) setLed(fireOut,4095); else setLed(fireOut,0);
-    isHandy = false;
+    isPhone = false;
     processJoystickInput(x, y);         
   }
 }
@@ -26,7 +26,7 @@ void handleXYMessage(OSCMessage &msg) {
 void handleToggleMessage(OSCMessage &msg) {
   if (msg.size() == 1) {
     toggleState = (msg.getFloat(0) > 0.5);  // 1.0 = on, 0.0 = off
-    if (isHandy) {
+    if (isPhone) {
       if (!toggleState) stopMotors();
     }
     else if (crawlerType == CRAWLER_PCA) setFrontLight( (!toggleState) ? 0 : 65);      

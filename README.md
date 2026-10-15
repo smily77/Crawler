@@ -1,267 +1,269 @@
 # Crawler
 
-Ferngesteuerte Raupenfahrzeuge (Crawler) auf ESP-Basis. Es gibt zwei Ausführungen, die mit derselben Firmware laufen, und zwei Arten der Fernsteuerung.
+Remote-controlled tracked vehicles (crawlers) based on ESP microcontrollers. There are two crawler variants running the same firmware, and two ways to control them.
 
-![Die beiden Crawler](docs/crawler.png)
+![The two crawlers](docs/crawler.png)
 
-*Links der Wemos-Crawler (beige), rechts der ESP32-CAM-Crawler mit Kamera (dunkelgrün).*
+*Left: the Wemos crawler (beige). Right: the ESP32-CAM crawler with camera (dark green).*
 
-| Ausführung | Controller | Motoren | Extras |
+| Variant | Controller | Motors | Extras |
 |---|---|---|---|
-| **Crawler ESP32-CAM** („Typ 1“) | ESP32-CAM (AI-Thinker) | PCA9685 → DRV8833 | Kamera mit Live-Stream, Front-, Rück-, Brems- und Rückfahrlicht |
-| **Crawler Wemos** („Typ 2“) | Wemos D1 mini (ESP8266) | DRV8833 direkt an GPIO | WLAN-Status-LED |
+| **ESP32-CAM crawler** ("type 1") | ESP32-CAM (AI-Thinker) | PCA9685 → DRV8833 | Camera with live stream; front, tail, brake and reversing lights |
+| **Wemos crawler** ("type 2") | Wemos D1 mini (ESP8266) | DRV8833 directly on GPIO | WiFi status LED |
 
-| Steuerung | Hardware | Übertragung |
+| Control | Hardware | Transport |
 |---|---|---|
-| **TouchOSC** | App auf dem Handy | WLAN, UDP/OSC |
-| **Joystick-Controller** | ESP32 mit Analog-Joystick, Taster, 2 Schaltern, 2 NeoPixeln | WLAN, UDP/OSC, oder ESP-NOW als Ersatz, wenn der Joystick kein WLAN findet |
+| **TouchOSC** | App on the phone | WiFi, UDP/OSC |
+| **Joystick controller** | ESP32 with analog joystick, push button, 2 switches, 2 NeoPixels | WiFi UDP/OSC, or ESP-NOW as fallback when the joystick finds no WiFi |
 
-## Inhalt des Repositorys
+All devices are battery powered.
 
-| Ordner | Inhalt | Ursprung |
+## Repository contents
+
+| Folder | Contents | Origin |
 |---|---|---|
-| `crawler/` | Firmware für beide Crawler (Version 10) | `combi10` |
-| `OSC_Joystick/` | Firmware für den Joystick-Controller (Version 10) | `OSC_Joystick10` |
-| `docs/` | Foto und Schemas | – |
+| `crawler/` | Firmware for both crawlers (version 10) | `combi10` |
+| `OSC_Joystick/` | Firmware for the joystick controller (version 10) | `OSC_Joystick10` |
+| `docs/` | Photo and schematics | – |
 
-Versionsgeschichte laut Kopfkommentar in `crawler.ino`: 6 Lampen · 7 Vorderlampen · 8 Kamera · 9 strukturiert · 10 ESP-NOW-Handshake.
+Version history according to the header comment in `crawler.ino`: 6 lights · 7 front lights · 8 camera · 9 restructured · 10 ESP-NOW handshake.
 
 ---
 
-## Systemübersicht
+## System overview
 
 ```mermaid
 flowchart LR
-    H["Handy<br/>TouchOSC"] -- "UDP/OSC<br/>192.168.0.192:1234" --> R(("WLAN-Router"))
-    J["Joystick-Controller<br/>ESP32"] -- "UDP/OSC" --> R
+    H["Phone<br/>TouchOSC"] -- "UDP/OSC<br/>192.168.0.192:1234" --> R(("WiFi router"))
+    J["Joystick controller<br/>ESP32"] -- "UDP/OSC" --> R
     R --> C["Crawler<br/>192.168.0.192"]
-    J -. "ESP-NOW<br/>(nur ohne WLAN beim Joystick)" .-> C
-    C -- "MJPEG-Stream<br/>Port 81 (nur ESP32-CAM)" --> B["Browser"]
+    J -. "ESP-NOW<br/>(only if joystick has no WiFi)" .-> C
+    C -- "MJPEG stream<br/>port 81 (ESP32-CAM only)" --> B["Browser"]
 ```
 
-Der Crawler hört immer gleichzeitig auf UDP/OSC (Port 1234) und ESP-NOW. Welcher Weg genutzt wird, entscheidet allein der Sender.
+The crawler always listens on UDP/OSC (port 1234) and ESP-NOW at the same time. The sender alone decides which path is used.
 
-### Netzwerk-Einstellungen (fest im Code)
+### Network settings (hard-coded)
 
-| Parameter | Wert | Datei |
+| Parameter | Value | File |
 |---|---|---|
-| WLAN-Zugangsdaten | `ssid`, `password` aus `<Credentials.h>` | beide |
-| IP des Crawlers | `192.168.0.192` (statisch), Gateway `192.168.0.1`, Maske `255.255.255.0` | `crawler/crawler.ino` |
-| MAC des Crawlers | `3C:61:05:D0:53:5C` (wird beim Start gesetzt) | `crawler/crawler.ino`, `OSC_Joystick/OSC_Joystick.ino` |
-| OSC-Port des Crawlers | UDP `1234` | beide |
-| Lokaler UDP-Port des Joysticks | `8888` | `OSC_Joystick/OSC_Joystick.ino` |
-| Hostname | `ESP-Crawler` (mDNS: `ESP-Crawler.local`, auch für OTA) | `crawler/crawler.ino` |
+| WiFi credentials | `ssid`, `password` from `<Credentials.h>` | both |
+| Crawler IP | `192.168.0.192` (static), gateway `192.168.0.1`, mask `255.255.255.0` | `crawler/crawler.ino` |
+| Crawler MAC | `3C:61:05:D0:53:5C` (set at startup) | `crawler/crawler.ino`, `OSC_Joystick/OSC_Joystick.ino` |
+| Crawler OSC port | UDP `1234` | both |
+| Joystick local UDP port | `8888` | `OSC_Joystick/OSC_Joystick.ino` |
+| Hostname | `ESP-Crawler` (mDNS: `ESP-Crawler.local`, also used for OTA) | `crawler/crawler.ino` |
 
-Da beide Crawler dieselbe IP und dieselbe MAC verwenden, kann immer nur einer gleichzeitig betrieben werden.
+Because both crawlers use the same IP and the same MAC, only one can be operated at a time.
 
 ---
 
-## Steuerung
+## Control
 
-### 1. TouchOSC (Handy)
+### 1. TouchOSC (phone)
 
-Das TouchOSC-Layout sendet an `192.168.0.192:1234`:
+The TouchOSC layout sends to `192.168.0.192:1234`:
 
-| OSC-Adresse | Argumente | Wirkung |
+| OSC address | Arguments | Effect |
 |---|---|---|
-| `/Crawler/xy1` | 2 Floats X, Y (0…1) | XY-Pad zum Fahren; wird nur ausgeführt, wenn der Freigabeschalter an ist |
-| `/Crawler/toggle1` | 1 Float (0/1) | Freigabe; beim Ausschalten stoppen die Motoren sofort |
+| `/Crawler/xy1` | 2 floats X, Y (0…1) | XY pad for driving; only executed while the enable toggle is on |
+| `/Crawler/toggle1` | 1 float (0/1) | Enable; switching it off stops the motors immediately |
 
-An der Anzahl der Argumente erkennt der Crawler, wer sendet: zwei Argumente bedeuten Handy (`isHandy = true`). Die Layout-Datei für TouchOSC ist nicht im Repository.
+The crawler identifies the sender by the number of arguments: two arguments mean phone (`isPhone = true`). The TouchOSC layout file is not in the repository yet.
 
-### 2. Joystick-Controller (ESP32)
+### 2. Joystick controller (ESP32)
 
-Beim Einschalten:
+At power-on:
 
-1. NeoPixel #0 leuchtet rot.
-2. Verbindung mit dem WLAN, höchstens 20 Versuche à 0,5 s. NeoPixel #1 blinkt dabei rot. Danach ist er aus, wenn das WLAN verbunden ist, oder dauerhaft rot, wenn nicht.
-3. ESP-NOW-Pairing, siehe [ESP-NOW-Pairing](#esp-now-pairing).
-4. Auswahl des Übertragungswegs. **ESP-NOW wird nur genutzt, wenn der Joystick kein WLAN hat und das Pairing geklappt hat.** Sonst sendet er per UDP/OSC.
-5. NeoPixel #0 zeigt den Modus: grün für OSC, blau für ESP-NOW.
+1. NeoPixel #0 lights red.
+2. Connects to WiFi, at most 20 attempts of 0.5 s each. NeoPixel #1 blinks red meanwhile. Afterwards it is off if WiFi is connected, or steady red if not.
+3. ESP-NOW pairing, see [ESP-NOW pairing](#esp-now-pairing).
+4. Selects the transport. **ESP-NOW is only used if the joystick has no WiFi and pairing succeeded.** Otherwise it sends via UDP/OSC.
+5. NeoPixel #0 shows the mode: green for OSC, blue for ESP-NOW.
 
-Im Betrieb wird alle 20 ms gesendet, auch ohne Änderung (`repetitive = true`).
+During operation it sends every 20 ms, even without changes (`repetitive = true`).
 
-| Bedienelement | OSC-Modus | ESP-NOW-Modus |
+| Control | OSC mode | ESP-NOW mode |
 |---|---|---|
-| Joystick X/Y | `/Crawler/xy1` mit 3 Argumenten (X, Y, Knopf) | Paket `joystick_message` |
-| Joystick-Knopf | 3. Argument → Ausgang „fireOut“ (PCA-Kanal 12) | wird als `button1` gesendet, aber vom Crawler nicht ausgewertet |
-| Taster | schaltet `enableButton` um, Taster-LED zeigt den Zustand, sendet `/Crawler/toggle1` → am ESP32-CAM-Crawler helleres Frontlicht | ohne Funktion |
-| Schalter L / R | ohne Funktion | ohne Funktion |
+| Joystick X/Y | `/Crawler/xy1` with 3 arguments (X, Y, button) | `joystick_message` packet |
+| Joystick button | 3rd argument → output "fireOut" (PCA channel 12) | sent as `button1`, but not evaluated by the crawler |
+| Enable button | toggles `enableButton`, the button LED shows the state, sends `/Crawler/toggle1` → brighter front light on the ESP32-CAM crawler | no function |
+| Switch L / R | no function | no function |
 
-Skalierung:
+Scaling:
 
-- OSC: X wird auf 0,33…0,66 abgebildet, die Lenkung ist also gedämpft. Y wird invertiert auf 1,0…0,0 abgebildet.
-- ESP-NOW: Die Mitte wird abgezogen, mit einer Totzone von ±50 auf ±512 skaliert, X durch 5 geteilt und Y invertiert.
+- OSC: X is mapped to 0.33…0.66, so steering is damped. Y is inverted and mapped to 1.0…0.0.
+- ESP-NOW: the center is subtracted, a deadzone of ±50 applied, the value scaled to ±512, X divided by 5 and Y inverted.
 
-Im Joystick-Modus (3 Argumente) fährt der Crawler ohne Freigabe.
+In joystick mode (3 arguments) the crawler drives without the enable toggle.
 
-### 3. Web-Oberfläche (nur ESP32-CAM)
+### 3. Web interface (ESP32-CAM only)
 
-- `http://192.168.0.192/` zeigt eine Seite „RC Crawler 2d“ mit dem Kamerabild.
-- `http://192.168.0.192:81/stream` liefert den MJPEG-Stream: VGA mit PSRAM, sonst SVGA. Das Bild ist gespiegelt und um 180° gedreht.
-- `http://192.168.0.192/action?go=forward|backward|left|right|stop` enthält Fahrbefehle mit fester Geschwindigkeit `webSpeed = 150`. Die Seite selbst hat keine Knöpfe dafür.
+- `http://192.168.0.192/` shows a page "RC Crawler 2d" with the camera image.
+- `http://192.168.0.192:81/stream` delivers the MJPEG stream: VGA with PSRAM, SVGA without. The image is mirrored and flipped (rotated by 180°).
+- `http://192.168.0.192/action?go=forward|backward|left|right|stop` accepts drive commands at a fixed speed `webSpeed = 150`. The page itself has no buttons for them.
 
 ---
 
-## Protokolle
+## Protocols
 
-### ESP-NOW-Nachrichten
+### ESP-NOW messages
 
 ```c
 typedef struct joystick_message {
   int16_t x;       // -512 … 512
-  int16_t y;       // -512 … 512  (negativ = vorwärts)
+  int16_t y;       // -512 … 512  (negative = forward)
   bool button1;
-  bool button2;    // ungenutzt
-  uint8_t target;  // ungenutzt (gedacht: 1, 2 oder 0 = alle)
+  bool button2;    // unused
+  uint8_t target;  // unused (intended: 1, 2 or 0 = all)
 } joystick_message;
 
 typedef struct pairing_message {
   uint8_t mac_addr[6];
   uint8_t channel;
-  bool isPairing;  // true = Anfrage, false = Bestätigung
+  bool isPairing;  // true = request, false = confirmation
 } pairing_message;
 ```
 
-Der Crawler unterscheidet die beiden Nachrichten an ihrer Länge.
+The crawler distinguishes the two messages by their length.
 
-### ESP-NOW-Pairing
+### ESP-NOW pairing
 
 ```mermaid
 sequenceDiagram
     participant J as Joystick
     participant C as Crawler
-    loop Kanal 1 … 13 (je 1 s warten)
+    loop Channel 1 … 13 (wait 1 s each)
         J->>C: Broadcast pairing_message (isPairing = true)
     end
-    C->>C: Joystick als Peer eintragen
-    C->>J: pairing_message (isPairing = false, eigene MAC, WLAN-Kanal)
-    J->>J: auf Kanal des Crawlers wechseln, Crawler als Peer eintragen
-    J->>C: joystick_message … (nur wenn Joystick ohne WLAN)
+    C->>C: Add joystick as peer
+    C->>J: pairing_message (isPairing = false, own MAC, WiFi channel)
+    J->>J: Switch to crawler's channel, add crawler as peer
+    J->>C: joystick_message … (only if joystick has no WiFi)
 ```
 
-Der Crawler meldet in der Bestätigung den Kanal seines WLANs (`homeChannel`). Findet der Joystick auf keinem Kanal einen Crawler, gilt ESP-NOW als nicht verfügbar.
+In its confirmation the crawler reports the channel of its WiFi (`homeChannel`). If the joystick finds no crawler on any channel, ESP-NOW is considered unavailable.
 
 ---
 
-## Fahr- und Lichtlogik (Crawler)
+## Drive and light logic (crawler)
 
-**Mischung (Panzersteuerung):** `links = Y + X`, `rechts = Y − X`. Der Bereich ±512 wird auf den PWM-Bereich abgebildet: PCA ±4095 bei 100 Hz, GPIO ±1023 bei 20 kHz. Unter einer Totzone von 100 stehen die Motoren still.
+**Mixing (tank steering):** `left = Y + X`, `right = Y − X`. The range ±512 is mapped to the PWM range: PCA ±4095 at 100 Hz, GPIO ±1023 at 20 kHz. Below a deadzone of 100 the motors stand still.
 
-**Typ-Erkennung beim Start:** Antwortet ein Gerät auf I²C-Adresse `0x40` (PCA9685), läuft der Crawler als Typ 1, sonst als Typ 2.
+**Type detection at startup:** If a device answers on I²C address `0x40` (PCA9685), the crawler runs as type 1, otherwise as type 2.
 
-**Licht (nur Typ 1, über PCA9685):**
+**Lights (type 1 only, via PCA9685):**
 
-| Zustand | Licht |
+| State | Lights |
 |---|---|
-| Start | weisse Rückfahrlichter hell |
-| WLAN-Verbindung läuft | weisse Lichter blinken |
-| WLAN verbunden | Rücklicht rot gedimmt (200), Frontlicht schwach |
-| Abbremsen (zweimal über, dann zweimal unter der Totzone) | Bremslicht: rot +2000 für 1 s |
-| Rückwärtsfahrt (zwei Pakete in Folge) | Rückfahrlicht weiss (400) |
-| `/Crawler/toggle1` im Joystick-Modus | Frontlicht heller (+65) |
-| Joystick-Knopf | Ausgang „fireOut“ (Kanal 12) voll an |
+| Startup | white reversing lights bright |
+| Connecting to WiFi | white lights blink |
+| WiFi connected | red tail light dimmed (200), front light low |
+| Braking (twice above, then twice below the deadzone) | brake light: red +2000 for 1 s |
+| Reversing (two packets in a row) | white reversing light (400) |
+| `/Crawler/toggle1` in joystick mode | brighter front light (+65) |
+| Joystick button | output "fireOut" (channel 12) fully on |
 
-**Typ 2:** Die WLAN-LED an D7 blinkt beim Verbinden und leuchtet, sobald das WLAN verbunden ist.
+**Type 2:** The WiFi LED on D7 blinks while connecting and stays on once WiFi is connected.
 
 ---
 
-## Hardware und Schemas
+## Hardware and schematics
 
-Die Schemas sind aus dem Code abgeleitet. Alle drei Geräte laufen mit Akku. Akkutyp, Spannungsregler und die genaue Beschaltung der DRV8833-Module gehen aus dem Code nicht hervor und sind deshalb nicht im Detail dargestellt.
+The schematics are derived from the code. All three devices run on battery. Battery type, voltage regulators and the exact wiring of the DRV8833 modules are not defined in the code and are therefore not shown in detail.
 
-### Crawler ESP32-CAM (Typ 1)
+### ESP32-CAM crawler (type 1)
 
-![Schema Crawler ESP32-CAM](docs/schema-crawler-esp32cam.svg)
+![Schematic ESP32-CAM crawler](docs/schema-crawler-esp32cam.svg)
 
-| ESP32-CAM | Verbindung |
+| ESP32-CAM | Connection |
 |---|---|
 | GPIO13 | I²C SDA → PCA9685 |
 | GPIO14 | I²C SCL → PCA9685 |
-| GPIO4 | Blitz-LED, als Ausgang gesetzt (aus) |
-| GPIO12 | wird beim Start HIGH gesetzt (Kommentar: „wegen Konflikt mit SDA“) |
-| Kamera | interne AI-Thinker-Belegung (PWDN 32, XCLK 0, SIOD 26, SIOC 27, Y2–Y9, VSYNC 25, HREF 23, PCLK 22) |
+| GPIO4 | Flash LED, set as output (off) |
+| GPIO12 | set HIGH at startup (comment: "because of PCA conflict with SDA") |
+| Camera | internal AI-Thinker pinout (PWDN 32, XCLK 0, SIOD 26, SIOC 27, Y2–Y9, VSYNC 25, HREF 23, PCLK 22) |
 
-| PCA9685-Kanal | Funktion |
+| PCA9685 channel | Function |
 |---|---|
-| 2 / 3 | Motor 1 (links), IN1 / IN2 |
-| 1 / 0 | Motor 2 (rechts), IN1 / IN2 |
-| 4 / 8 | Rück- und Bremslicht rot, rechts / links |
-| 5 / 9 | Rückfahrlicht weiss, rechts / links |
-| 6 / 10 | Frontlicht, rechts / links (Grundhelligkeit 7 / 3) |
-| 12 | „fireOut“ (Joystick-Knopf) |
+| 2 / 3 | Motor 1 (left), IN1 / IN2 |
+| 1 / 0 | Motor 2 (right), IN1 / IN2 |
+| 4 / 8 | Red tail and brake light, right / left |
+| 5 / 9 | White reversing light, right / left |
+| 6 / 10 | Front light, right / left (base brightness 7 / 3) |
+| 12 | "fireOut" (joystick button) |
 
-### Crawler Wemos D1 mini (Typ 2)
+### Wemos D1 mini crawler (type 2)
 
-![Schema Crawler Wemos](docs/schema-crawler-wemos.svg)
+![Schematic Wemos crawler](docs/schema-crawler-wemos.svg)
 
-| Wemos-Pin | GPIO | Funktion |
+| Wemos pin | GPIO | Function |
 |---|---|---|
-| D6 | 12 | Motor 1 (links) IN1 |
-| D5 | 14 | Motor 1 (links) IN2 |
-| D1 | 5 | Motor 2 (rechts) IN1 |
-| D2 | 4 | Motor 2 (rechts) IN2 |
-| D7 | 13 | WLAN-LED |
+| D6 | 12 | Motor 1 (left) IN1 |
+| D5 | 14 | Motor 1 (left) IN2 |
+| D1 | 5 | Motor 2 (right) IN1 |
+| D2 | 4 | Motor 2 (right) IN2 |
+| D7 | 13 | WiFi LED |
 
-Die Motoren laufen im „Slow Decay“: Ein Eingang liegt auf HIGH, der andere bekommt die invertierte PWM.
+The motors run in "slow decay" mode: one input is held HIGH, the other receives the inverted PWM.
 
-> Der Code kennt auch einen ESP32 mit Motoren direkt an GPIO 12/13 (Motor 1) und 27/25 (Motor 2) sowie einer LED an GPIO 14. Auf der ESP32-CAM kollidieren diese Pins mit Kamera und I²C, die Variante ist also nur ohne `FPV` sinnvoll.
+> The code also supports an ESP32 with motors directly on GPIO 12/13 (motor 1) and 27/25 (motor 2) and an LED on GPIO 14. On the ESP32-CAM these pins collide with the camera and I²C, so this variant only makes sense without `FPV`.
 
-### Joystick-Controller (ESP32)
+### Joystick controller (ESP32)
 
-![Schema Joystick](docs/schema-joystick.svg)
+![Schematic joystick](docs/schema-joystick.svg)
 
-| GPIO | Funktion |
+| GPIO | Function |
 |---|---|
 | 33 | Joystick X (ADC) |
 | 32 | Joystick Y (ADC) |
-| 25 | Joystick-Knopf (interner Pull-up, aktiv LOW) |
-| 36 | Taster (aktiv LOW, externer Pull-up nötig) |
-| 27 | Taster-LED |
-| 35 / 34 | Schalter L / R (nicht ausgewertet) |
-| 14 | 2× WS2812: #0 rechts = Modus, #1 links = WLAN |
-| 5 | Board-LED (an) |
+| 25 | Joystick button (internal pull-up, active LOW) |
+| 36 | Enable button (active LOW, external pull-up required) |
+| 27 | Enable button LED |
+| 35 / 34 | Switch L / R (not evaluated) |
+| 14 | 2× WS2812: #0 right = mode, #1 left = WiFi |
+| 5 | Board LED (on) |
 
 ---
 
-## Kompilieren
+## Building
 
-**Gemeinsam:** Die Datei `Credentials.h` muss als Bibliothek im Arduino-`libraries`-Ordner liegen und `ssid` und `password` definieren. Sie ist absichtlich nicht im Repository (siehe `.gitignore`).
+**Common:** The file `Credentials.h` must be placed as a library in the Arduino `libraries` folder and define `ssid` and `password`. It is intentionally not part of the repository (see `.gitignore`).
 
-Benötigte Bibliotheken:
+Required libraries:
 
 - `OSCMessage` (CNMAT OSC)
 - `Streaming`
-- `Adafruit PWM Servo Driver` (Crawler)
-- `Adafruit NeoPixel` (Joystick)
-- `ArduinoOTA`, `esp_camera`: im Board-Paket enthalten
+- `Adafruit PWM Servo Driver` (crawler)
+- `Adafruit NeoPixel` (joystick)
+- `ArduinoOTA`, `esp_camera`: included in the board package
 
-**ESP32-Board-Paket:** Der Code nutzt `ledcSetup`/`ledcAttachPin` und die alte ESP-NOW-Callback-Signatur. Er passt deshalb zum Arduino-ESP32-Core **2.x**, nicht zu 3.x.
+**ESP32 board package:** The code uses `ledcSetup`/`ledcAttachPin` and the old ESP-NOW callback signature. It therefore requires Arduino-ESP32 core **2.x**, not 3.x.
 
-**Crawler: Auswahl im Kopf von `crawler/crawler.ino`**
+**Crawler: selection at the top of `crawler/crawler.ino`**
 
-| Ziel | Defines | Board |
+| Target | Defines | Board |
 |---|---|---|
-| ESP32-CAM | `#define ESP32`, `#define FPV` | „AI Thinker ESP32-CAM“ |
-| Wemos D1 mini | `#define ESP8266`, `FPV` auskommentieren | „LOLIN(WEMOS) D1 R2 & mini“ |
+| ESP32-CAM | `#define ESP32`, `#define FPV` | "AI Thinker ESP32-CAM" |
+| Wemos D1 mini | `#define ESP8266`, comment out `FPV` | "LOLIN(WEMOS) D1 R2 & mini" |
 
-`DEBUG` und `FIXESP` schalten zusätzliche serielle Ausgaben ein (115200 Baud).
+`DEBUG` and `FIXESP` enable additional serial output (115200 baud).
 
-**Joystick:** Board „ESP32 Dev Module“, passend zum verwendeten Board.
+**Joystick:** board "ESP32 Dev Module", or whichever matches the board used.
 
 ---
 
-## Bekannte Punkte / offene Baustellen
+## Known issues / open tasks
 
-Diese Liste stammt aus dem Durchlesen des Codes von Version 10 und ist die Grundlage für die anstehenden Korrekturen:
+This list comes from reading the version 10 code and is the basis for the upcoming fixes:
 
-1. **WLAN/ESP-NOW-Fallback:** Nur der Joystick entscheidet, und zwar nur einmal beim Start. Hat der Joystick WLAN, der Crawler aber nicht, sendet er per UDP ins Leere. Bei späterem WLAN-Verlust wird nicht umgeschaltet.
-2. **ESP8266-Build:** `crawler/autoPairEspNow.ino` und `setup()` nutzen die ESP-NOW-API des ESP32 (`esp_now_peer_info_t`, `esp_err_t`, `ESP_OK`). Die ESP8266-Variante in `ESP_Now.ino` ist auskommentiert. Ob der Wemos-Crawler mit Version 10 kompiliert, ist zu prüfen.
-3. **OTA auf der ESP32-CAM:** `ArduinoOTA.handle()` wird nur ohne `FPV` aufgerufen, OTA ist auf dem Kamera-Crawler also faktisch aus.
-4. **Joystick-Mitte fest codiert und uneinheitlich:** Für OSC gilt `midX = 1947`, `midY = 1936`, für ESP-NOW `joystickCenterX = 1935`, `joystickCenterY = 1947`. X und Y scheinen vertauscht.
-5. **ESP-NOW ohne Taster/Knopf:** `button1` und `target` werden vom Crawler nicht ausgewertet, und Freigabe-Taster und Frontlicht funktionieren im ESP-NOW-Modus nicht.
-6. **Pairing:** Der Crawler akzeptiert jede Pairing-Anfrage, und `isPaired` wird nie zurückgesetzt. Der Joystick sendet an die fest codierte `crawlerMAC` statt an die beim Pairing gemeldete MAC. Das funktioniert nur, weil der Crawler genau diese MAC setzt.
-7. **Gleiche IP/MAC für beide Crawler:** Sie können nicht gleichzeitig betrieben werden.
-8. **Schalter L/R:** Sie werden initialisiert, aber nicht verwendet.
-9. **Web-Seite:** Der `/action`-Handler existiert, die Seite hat aber keine Steuerknöpfe.
-10. **TouchOSC-Layout:** Die Layout-Datei fehlt noch im Repository und wird später ergänzt.
+1. **WiFi/ESP-NOW fallback:** Only the joystick decides, and only once at startup. If the joystick has WiFi but the crawler does not, the joystick sends UDP into the void. There is no switch-over if WiFi is lost later.
+2. **ESP8266 build:** `crawler/autoPairEspNow.ino` and `setup()` use the ESP32 ESP-NOW API (`esp_now_peer_info_t`, `esp_err_t`, `ESP_OK`). The ESP8266 variant in `ESP_Now.ino` is commented out. Whether the Wemos crawler compiles with version 10 needs to be checked.
+3. **OTA on the ESP32-CAM:** `ArduinoOTA.handle()` is only called without `FPV`, so OTA is effectively disabled on the camera crawler.
+4. **Joystick center hard-coded and inconsistent:** OSC uses `midX = 1947`, `midY = 1936`, ESP-NOW uses `joystickCenterX = 1935`, `joystickCenterY = 1947`. X and Y appear to be swapped.
+5. **ESP-NOW without buttons:** `button1` and `target` are not evaluated by the crawler, and the enable button and front light do not work in ESP-NOW mode.
+6. **Pairing:** The crawler accepts any pairing request, and `isPaired` is never reset. The joystick sends to the hard-coded `crawlerMAC` instead of the MAC reported during pairing. This only works because the crawler sets exactly that MAC.
+7. **Same IP/MAC for both crawlers:** They cannot be operated at the same time.
+8. **Switches L/R:** They are initialized but not used.
+9. **Web page:** The `/action` handler exists, but the page has no control buttons.
+10. **TouchOSC layout:** The layout file is still missing from the repository and will be added later.

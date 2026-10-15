@@ -1,6 +1,6 @@
-void setLed(uint8_t kanal, uint16_t helligkeit) {
-    if (helligkeit > 4095) helligkeit = 4095; // Maximalwert begrenzen
-    pwm.setPWM(kanal, 0, helligkeit);
+void setLed(uint8_t channel, uint16_t brightness) {
+    if (brightness > 4095) brightness = 4095; // Limit to maximum value
+    pwm.setPWM(channel, 0, brightness);
 }
 
 void setRightRedLight(int delta) {

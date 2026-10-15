@@ -4,7 +4,7 @@ typedef struct pairing_message {
   bool isPairing;
 } pairing_message;
 
-// Callback-Funktion für empfangene Daten
+// Callback for received data
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
   if (FIXESP) Serial << "ESP-NOW msg received" << endl;
   if (len == sizeof(pairing_message)) {
@@ -12,22 +12,22 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
     memcpy(&message, incomingData, sizeof(message));
 //    if (message.isPairing && !isPaired) {                                 // is pairing request
     if (message.isPairing) {                                 // is pairing request
-      memcpy(transmitterMacAddress, mac, sizeof(transmitterMacAddress));  // MAC-Adresse des Transmitters speichern
-      esp_now_peer_info_t peerInfo = {};                                  // Peer speichern - Initialisiert alle Werte auf 0
+      memcpy(transmitterMacAddress, mac, sizeof(transmitterMacAddress));  // Store transmitter MAC address
+      esp_now_peer_info_t peerInfo = {};                                  // Store peer - initializes all fields to 0
       memcpy(peerInfo.peer_addr, mac, 6);
-      peerInfo.channel = 0;                                               // Automatischer Kanal
+      peerInfo.channel = 0;                                               // Automatic channel
       peerInfo.encrypt = false;
-      if (esp_now_is_peer_exist(mac)) esp_now_del_peer(mac);              // Prüfen, ob der Peer bereits existiert
+      if (esp_now_is_peer_exist(mac)) esp_now_del_peer(mac);              // Check whether the peer already exists
       if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-        if (DEBUG) Serial << "Fehler beim Hinzufügen des Peers" << endl;
+        if (DEBUG) Serial << "Error adding peer" << endl;
       } else {
-        pairing_message response;                                         // Antwort mit eigenen Daten vorbereiten
+        pairing_message response;                                         // Prepare reply with own data
         WiFi.macAddress(response.mac_addr);
         response.channel = homeChannel;
-        response.isPairing = false;                                       // Dies ist eine Bestätigung    
-        esp_err_t result = esp_now_send(mac, (uint8_t *) &response, sizeof(response)); // Antwort senden
+        response.isPairing = false;                                       // This is a confirmation    
+        esp_err_t result = esp_now_send(mac, (uint8_t *) &response, sizeof(response)); // Send reply
         if (result != ESP_OK) {
-          if (DEBUG) Serial << "Fehler beim Senden der Pairing-Bestätigung: " << result << endl;
+          if (DEBUG) Serial << "Error sending pairing confirmation: " << result << endl;
         } else isPaired = true;
       }
     } // is pairing request
@@ -40,7 +40,7 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
   }
 }
 
-// Callback-Funktion für gesendete Daten
+// Callback for sent data
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   if (status != ESP_NOW_SEND_SUCCESS) if (DEBUG) Serial << "Send fail" << endl;
 }

@@ -9,26 +9,26 @@
     .w { stroke-width:2; fill:none; }
   </style>
 
-  <text x="30" y="34" class="title">Joystick-Controller – ESP32</text>
+  <text x="30" y="34" class="title">Joystick controller – ESP32</text>
 
-  <!-- Joystick-Modul -->
+  <!-- Joystick module -->
   <rect x="40" y="90" width="170" height="130" rx="8" class="box"/>
-  <text x="56" y="114" class="h">Analog-Joystick</text>
+  <text x="56" y="114" class="h">Analog joystick</text>
   <text x="200" y="144" class="pin" text-anchor="end">VRx</text>
   <text x="200" y="174" class="pin" text-anchor="end">VRy</text>
-  <text x="200" y="204" class="pin" text-anchor="end">SW (Knopf)</text>
+  <text x="200" y="204" class="pin" text-anchor="end">SW (button)</text>
 
-  <!-- Taster -->
+  <!-- Enable button -->
   <rect x="40" y="250" width="170" height="80" rx="8" class="box"/>
-  <text x="56" y="274" class="h">Taster mit LED</text>
-  <text x="200" y="294" class="pin" text-anchor="end">Taster</text>
+  <text x="56" y="274" class="h">Button with LED</text>
+  <text x="200" y="294" class="pin" text-anchor="end">Button</text>
   <text x="200" y="320" class="pin" text-anchor="end">LED</text>
 
-  <!-- Schalter -->
+  <!-- Switches -->
   <rect x="40" y="360" width="170" height="90" rx="8" class="box"/>
-  <text x="56" y="384" class="h">2 Schalter</text>
-  <text x="200" y="404" class="pin" text-anchor="end">Schalter L</text>
-  <text x="200" y="434" class="pin" text-anchor="end">Schalter R</text>
+  <text x="56" y="384" class="h">2 switches</text>
+  <text x="200" y="404" class="pin" text-anchor="end">Switch L</text>
+  <text x="200" y="434" class="pin" text-anchor="end">Switch R</text>
 
   <g class="w">
     <line x1="210" y1="140" x2="340" y2="140" stroke="#1f6fd1"/>
@@ -46,11 +46,11 @@
   <g class="pin">
     <text x="350" y="144">GPIO33 (ADC)</text>
     <text x="350" y="174">GPIO32 (ADC)</text>
-    <text x="350" y="204">GPIO25 (Pull-up intern)</text>
-    <text x="350" y="294">GPIO36 (nur Eingang)</text>
+    <text x="350" y="204">GPIO25 (internal pull-up)</text>
+    <text x="350" y="294">GPIO36 (input only)</text>
     <text x="350" y="320">GPIO27</text>
-    <text x="350" y="404">GPIO35 (nur Eingang)</text>
-    <text x="350" y="434">GPIO34 (nur Eingang)</text>
+    <text x="350" y="404">GPIO35 (input only)</text>
+    <text x="350" y="434">GPIO34 (input only)</text>
   </g>
   <g class="pin" text-anchor="end">
     <text x="572" y="144">GPIO14</text>
@@ -62,27 +62,27 @@
   <text x="620" y="132" class="pin" text-anchor="middle">DIN</text>
   <rect x="660" y="112" width="120" height="56" rx="6" class="box"/>
   <text x="670" y="134" class="pin">WS2812 #0</text>
-  <text x="670" y="154" class="pin">rechts: Modus</text>
+  <text x="670" y="154" class="pin">right: mode</text>
   <line x1="780" y1="140" x2="800" y2="140" stroke="#6a1b9a" class="w"/>
   <rect x="800" y="112" width="130" height="56" rx="6" class="box"/>
   <text x="810" y="134" class="pin">WS2812 #1</text>
-  <text x="810" y="154" class="pin">links: WLAN</text>
+  <text x="810" y="154" class="pin">left: WiFi</text>
 
-  <!-- Board-LED -->
+  <!-- Board LED -->
   <line x1="580" y1="250" x2="660" y2="250" stroke="#2e7d32" class="w"/>
   <circle cx="670" cy="250" r="9" fill="#66bb6a" stroke="#333" stroke-width="1.2"/>
-  <text x="690" y="254" class="pin">Board-LED (an)</text>
+  <text x="690" y="254" class="pin">Board LED (on)</text>
 
-  <!-- Legende -->
-  <text x="620" y="320" class="h">Pixel-Farben</text>
+  <!-- Legend -->
+  <text x="620" y="320" class="h">Pixel colors</text>
   <g class="pin">
-    <text x="620" y="344">#0 rot: Start / Verbindungsaufbau</text>
-    <text x="620" y="364">#0 grün: Senden per WLAN/OSC</text>
-    <text x="620" y="384">#0 blau: Senden per ESP-NOW</text>
-    <text x="620" y="408">#1 blinkt rot: WLAN-Verbindung läuft</text>
-    <text x="620" y="428">#1 rot: kein WLAN · aus: WLAN ok</text>
+    <text x="620" y="344">#0 red: startup / connecting</text>
+    <text x="620" y="364">#0 green: sending via WiFi/OSC</text>
+    <text x="620" y="384">#0 blue: sending via ESP-NOW</text>
+    <text x="620" y="408">#1 blinking red: connecting to WiFi</text>
+    <text x="620" y="428">#1 red: no WiFi · off: WiFi ok</text>
   </g>
 
-  <text x="40" y="500" class="note">GPIO34/35/36 haben keine internen Pull-ups: Taster und Schalter brauchen externe Widerstände. Die Schalter werden in Version 10 eingelesen, aber nicht ausgewertet.</text>
-  <text x="40" y="520" class="note">Versorgung über Akku; Akkutyp und Spannungsregler gehen aus dem Code nicht hervor und sind nicht dargestellt.</text>
+  <text x="40" y="500" class="note">GPIO34/35/36 have no internal pull-ups: button and switches need external resistors. In version 10 the switches are read but not evaluated.</text>
+  <text x="40" y="520" class="note">Battery powered; battery type and voltage regulator are not defined in the code and are not shown.</text>
 </svg>

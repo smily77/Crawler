@@ -33,29 +33,29 @@ static unsigned long breakLightStart;
     bool isCurrentlyReverse = -leftMotorSpeed < -MOTOR_DEADZONE && -rightMotorSpeed < -MOTOR_DEADZONE;
     if ((leftMotorSpeed > MOTOR_DEADZONE && rightMotorSpeed < MOTOR_DEADZONE) || (leftMotorSpeed < MOTOR_DEADZONE && rightMotorSpeed > MOTOR_DEADZONE)) isCurrentlyAboveDeadZone = false;
 
-  // Prüfen, ob Joystick zweimal hintereinander oberhalb der Deadzone war
+  // Check whether the joystick was above the deadzone twice in a row
     if (isCurrentlyAboveDeadZone) {
       aboveDeadZoneCount++;
-      belowDeadZoneCount = 0; // zurücksetzen
+      belowDeadZoneCount = 0; // reset
     }
    const int limit = 2;
-   // Prüfen, ob Joystick zweimal hintereinander unterhalb der Deadzone war
+   // Check whether the joystick was below the deadzone twice in a row
     if (isCurrentlyBelowDeadZone) {
      belowDeadZoneCount++;
-     if (belowDeadZoneCount > limit) aboveDeadZoneCount = 0; // zurücksetzen
+     if (belowDeadZoneCount > limit) aboveDeadZoneCount = 0; // reset
     }
 
-    // didBrake Logik (zweimal über Deadzone gefolgt von zweimal unter Deadzone)
+    // didBrake logic (twice above deadzone followed by twice below deadzone)
     if (aboveDeadZoneCount >= limit && belowDeadZoneCount >= limit) {
       didBrake = true;
-      // Zähler zurücksetzen nach Ereignis
+      // Reset counters after the event
       aboveDeadZoneCount = 0;
       belowDeadZoneCount = 0;
     } else {
       didBrake = false;
     }
 
-     // isReverse Logik (zweimal hintereinander reverse)
+     // isReverse logic (reverse twice in a row)
     if (isCurrentlyReverse) {
       reverseCount++;
     } else {
@@ -147,24 +147,24 @@ void setMotorDirect(uint8_t pin1, uint8_t pin2, int16_t speed) {
 #elif defined ESP32
 /*
   if (speed > 0) {
-    ledcWrite(pin1, speed);  // eigentlich channel
+    ledcWrite(pin1, speed);  // actually a channel
     ledcWrite(pin2, 0); //0
   } else if (speed < 0) {
     ledcWrite(pin1, 0);
     ledcWrite(pin2, -speed);
-  } else {  // Stillstand
+  } else {  // Standstill
     ledcWrite(pin1, 0);
     ledcWrite(pin2, 0);
   }
  */
   if (speed > 0) {
     //Serial << speed << endl;
-    ledcWrite(pin2, GPIO_PWM_MAX - speed);  // eigentlich channel
+    ledcWrite(pin2, GPIO_PWM_MAX - speed);  // actually a channel
     ledcWrite(pin1, GPIO_PWM_MAX); //0
   } else if (speed < 0) {
     ledcWrite(pin2, GPIO_PWM_MAX);
     ledcWrite(pin1, GPIO_PWM_MAX + speed);
-  } else {  // Stillstand
+  } else {  // Standstill
     ledcWrite(pin1, 0);
     ledcWrite(pin2, 0);
   }

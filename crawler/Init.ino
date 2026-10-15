@@ -8,8 +8,8 @@ void setupWifi() {
 #endif
   WiFi.disconnect();
   WiFi.config(staticIP, gateway, subnet);
-  // Prüfen ob ESP die Adresse übernommen hat:
-  Serial << "Aktuelle MAC-Adresse des ESP: " << WiFi.macAddress() << endl;
+  // Check whether the ESP accepted the address:
+  Serial << "Current MAC address of the ESP: " << WiFi.macAddress() << endl;
   WiFi.begin(ssid, password);
   int connectionAttempts = 0;
   while (WiFi.status() != WL_CONNECTED && connectionAttempts < 20) {
@@ -54,12 +54,12 @@ void initGpioCrawler() {
     pinMode(MOTOR2_GPIO_PIN1, OUTPUT);
     pinMode(MOTOR2_GPIO_PIN2, OUTPUT);
   #elif defined ESP32
-    // PWM-Kanäle konfigurieren
+    // Configure PWM channels
     ledcSetup(MOTOR1_CHAN1, GPIO_PWM_FREQ, GPIO_PWM_RESOLUTION);
     ledcSetup(MOTOR1_CHAN2, GPIO_PWM_FREQ, GPIO_PWM_RESOLUTION);
     ledcSetup(MOTOR2_CHAN1, GPIO_PWM_FREQ, GPIO_PWM_RESOLUTION);
     ledcSetup(MOTOR2_CHAN2, GPIO_PWM_FREQ, GPIO_PWM_RESOLUTION);
-    // PWM-Kanäle GPIO Pins zuweisen
+    // Attach GPIO pins to PWM channels
     ledcAttachPin(MOTOR1_GPIO_PIN1, MOTOR1_CHAN1);
     ledcAttachPin(MOTOR1_GPIO_PIN2, MOTOR1_CHAN2);
     ledcAttachPin(MOTOR2_GPIO_PIN1, MOTOR2_CHAN1);
