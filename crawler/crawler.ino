@@ -163,6 +163,7 @@ volatile unsigned long lastEspnowCmd = 0;  // time of last joystick packet
 uint8_t transmitterMacAddress[6] = {0};
 bool isPaired = false;
 uint8_t homeChannel = 1;  // WiFi channel (fixed to 1 when WiFi is not available)
+bool wifiRoaming = false;  // switch to a stronger AP while driving (only when WiFi is connected)
 
 
 
@@ -230,4 +231,5 @@ void loop() {
 #endif
   handleEspnowControl();
   checkOsc();
+  handleRoaming();
 }

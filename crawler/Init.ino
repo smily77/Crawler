@@ -12,11 +12,7 @@ void setupWifi() {
   Serial << "Current MAC address of the ESP: " << WiFi.macAddress() << endl;
   // Several APs share the same SSID: connect to the one with the strongest signal
 #if defined ESP8266
-  int strongest = -1;
-  int networks = WiFi.scanNetworks();
-  for (int i = 0; i < networks; i++) {
-    if (WiFi.SSID(i) == ssid && (strongest < 0 || WiFi.RSSI(i) > WiFi.RSSI(strongest))) strongest = i;
-  }
+  int strongest = strongestAp(WiFi.scanNetworks());
   if (strongest >= 0) {
     Serial << "Strongest AP: " << WiFi.BSSIDstr(strongest) << "  RSSI: " << WiFi.RSSI(strongest) << endl;
     WiFi.begin(ssid, password, WiFi.channel(strongest), WiFi.BSSID(strongest));
@@ -44,6 +40,7 @@ void setupWifi() {
   }
   if (WiFi.status() == WL_CONNECTED) {
     homeChannel = WiFi.channel();
+    wifiRoaming = true;
     Serial << "\nWiFi connected IP address: " << WiFi.localIP() << "  Channel:   " << WiFi.channel()
            << "  AP: " << WiFi.BSSIDstr() << "  RSSI: " << WiFi.RSSI() << endl;
     if (crawlerType == CRAWLER_PCA) {
