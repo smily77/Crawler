@@ -1,13 +1,27 @@
 // WiFi roaming: several APs share the same SSID. While driving, the crawler
 // watches its signal and switches to a clearly stronger AP when it gets weak.
 // The scan runs in the background (async), so loop() keeps driving.
+// A scan on the current channel costs only ~100 ms and does not leave the channel,
+// so the camera stream keeps running. Scanning all channels interrupts the stream
+// for over a second, so this is only done when the signal is really bad.
 
-#define ROAM_CHECK_INTERVAL 2000     // ms between RSSI checks
-#define ROAM_RSSI_THRESHOLD -70      // dBm: only look for another AP below this
-#define ROAM_SCAN_INTERVAL 15000     // ms: at most one scan in this time
-#define ROAM_MARGIN 8                // dB the new AP must be better than the current one
-#define ROAM_SCAN_MS_PER_CHAN 120    // ESP32: short dwell time per channel (default 300)
-#define ROAM_FALLBACK_TIMEOUT 10000  // ms without connection after a switch -> connect to any AP
+#define ROAM_CHECK_INTERVAL 2000       // ms between RSSI checks
+#define ROAM_RSSI_THRESHOLD -72        // dBm: scan the current channel below this
+#define ROAM_SCAN_INTERVAL 20000       // ms: at most one current-channel scan in this time
+#define ROAM_RSSI_FULL_SCAN -82        // dBm: scan all channels below this
+#define ROAM_FULL_SCAN_INTERVAL 60000  // ms: at most one all-channel scan in this time
+#define ROAM_MARGIN 8                  // dB the new AP must be better than the current one
+#define SCAN_MS_PER_CHAN 80            // ESP32: short dwell time per channel (default 300)
+#define ROAM_FALLBACK_TIMEOUT 10000    // ms without connection after a switch -> connect to any AP
+
+// Start a scan for our SSID; channel 0 = all channels
+int startScan(bool async, uint8_t channel) {
+#if defined ESP8266
+  return WiFi.scanNetworks(async, false, channel, (uint8*)ssid);
+#elif defined ESP32
+  return WiFi.scanNetworks(async, false, false, SCAN_MS_PER_CHAN, channel, ssid);
+#endif
+}
 
 // Index of the scan result with our SSID and the strongest signal, or -1
 int strongestAp(int networks) {
@@ -21,10 +35,11 @@ int strongestAp(int networks) {
 void handleRoaming() {
   static unsigned long lastCheck = 0;
   static unsigned long lastScan = 0;
+  static unsigned long lastFullScan = 0;
   static bool scanning = false;
   static bool wasConnected = true;
   static unsigned long lostSince = 0;
-  static bool lockedToBssid = true;    // last begin() may be for one specific AP (ESP8266 setupWifi() too)
+  static bool lockedToBssid = true;    // setupWifi() connects to one specific AP
 
   if (!wifiRoaming) return;
   unsigned long now = millis();
@@ -75,11 +90,12 @@ void handleRoaming() {
 
   if (now - lastCheck < ROAM_CHECK_INTERVAL) return;
   lastCheck = now;
-  if (WiFi.RSSI() >= ROAM_RSSI_THRESHOLD || now - lastScan < ROAM_SCAN_INTERVAL) return;
-  lastScan = now;
-#if defined ESP8266
-  scanning = WiFi.scanNetworks(true) == WIFI_SCAN_RUNNING;
-#elif defined ESP32
-  scanning = WiFi.scanNetworks(true, false, false, ROAM_SCAN_MS_PER_CHAN, 0, ssid) == WIFI_SCAN_RUNNING;
-#endif
+  int rssi = WiFi.RSSI();
+  if (rssi < ROAM_RSSI_FULL_SCAN && now - lastFullScan >= ROAM_FULL_SCAN_INTERVAL) {
+    lastFullScan = lastScan = now;
+    scanning = startScan(true, 0) == WIFI_SCAN_RUNNING;
+  } else if (rssi < ROAM_RSSI_THRESHOLD && now - lastScan >= ROAM_SCAN_INTERVAL) {
+    lastScan = now;
+    scanning = startScan(true, WiFi.channel()) == WIFI_SCAN_RUNNING;
+  }
 }

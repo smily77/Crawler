@@ -10,9 +10,9 @@ void setupWifi() {
   WiFi.config(staticIP, gateway, subnet);
   // Check whether the ESP accepted the address:
   Serial << "Current MAC address of the ESP: " << WiFi.macAddress() << endl;
-  // Several APs share the same SSID: connect to the one with the strongest signal
-#if defined ESP8266
-  int strongest = strongestAp(WiFi.scanNetworks());
+  // Several APs share the same SSID: connect to the one with the strongest signal.
+  // One short scan for our SSID only, then begin() with BSSID + channel skips the connect scan.
+  int strongest = strongestAp(startScan(false, 0));
   if (strongest >= 0) {
     Serial << "Strongest AP: " << WiFi.BSSIDstr(strongest) << "  RSSI: " << WiFi.RSSI(strongest) << endl;
     WiFi.begin(ssid, password, WiFi.channel(strongest), WiFi.BSSID(strongest));
@@ -20,11 +20,6 @@ void setupWifi() {
     WiFi.begin(ssid, password);
   }
   WiFi.scanDelete();
-#elif defined ESP32
-  WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);      // default is fast scan = first AP found
-  WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
-  WiFi.begin(ssid, password);
-#endif
   int connectionAttempts = 0;
   while (WiFi.status() != WL_CONNECTED && connectionAttempts < 40) {   // up to 20 s, the AP can be slow after a reboot
     if (crawlerType == CRAWLER_PCA) {
