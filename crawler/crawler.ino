@@ -104,6 +104,7 @@ uint8_t crawlerType = CRAWLER_PCA;
   #define MOTOR2_GPIO_PIN1 27   //GPIO pin for motor 2 input 1
   #define MOTOR2_GPIO_PIN2 25   //GPIO pin for motor 2 input 2
   #define wifiLed 14 
+  #define CAM_LED_PIN 4     // flash LED on the ESP32-CAM board
 #endif
 
 // PWM ESP32 GPIO Channels
@@ -188,6 +189,7 @@ volatile bool webNew = false;         // new XY command waiting
 volatile bool webActive = false;      // web control currently driving
 volatile unsigned long lastWebCmd = 0;
 volatile int8_t webLightReq = -1;     // -1 = no request, 0 = off, 1 = full light
+volatile int8_t webCamLedReq = -1;    // -1 = no request, 0 = off, 1 = on (flash LED on the camera board)
 #endif
  
 void setup() {
@@ -201,7 +203,8 @@ void setup() {
 #if defined ESP32  // because of PCA conflict with SDA
   pinMode(MOTOR1_GPIO_PIN1,OUTPUT);
   digitalWrite(MOTOR1_GPIO_PIN1,HIGH);
-  pinMode(4,OUTPUT);
+  pinMode(CAM_LED_PIN, OUTPUT);       // flash LED on the ESP32-CAM board, off by default
+  digitalWrite(CAM_LED_PIN, LOW);
 #endif
   Wire.begin(SDA_PIN, SCL_PIN);
   crawlerType = detectCrawlerType();

@@ -21,10 +21,11 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
   #pad::after { top: 50%; left: 8%; right: 8%; height: 1px; }
   #knob { position: absolute; left: 50%; top: 50%; width: 22%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
           background: #4c8dff; box-shadow: 0 0 12px rgba(76,141,255,.6); z-index: 1; pointer-events: none; }
-  #btns { display: flex; flex-direction: column; gap: 16px; }
-  .btn { width: 92px; height: 92px; border-radius: 50%; border: 2px solid #3a4558; background: #222936; color: #e6e9ef;
+  #btns { display: flex; flex-direction: column; gap: 12px; }
+  .btn { width: 80px; height: 80px; border-radius: 50%; border: 2px solid #3a4558; background: #222936; color: #e6e9ef;
          font-size: 16px; font-weight: bold; touch-action: none; cursor: pointer; }
   #light.on { background: #f5d547; color: #14181f; border-color: #f5d547; }
+  #camled.on { background: #ffffff; color: #14181f; border-color: #ffffff; }
   #fire.on  { background: #ff4b3e; border-color: #ff4b3e; }
   #status { font-size: 12px; color: #ff8a80; height: 14px; text-align: center; }
   @media (orientation: landscape) and (max-height: 600px) {
@@ -42,6 +43,7 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
       <div id="pad"><div id="knob"></div></div>
       <div id="btns">
         <button id="light" class="btn">Light</button>
+        <button id="camled" class="btn">Cam LED</button>
         <button id="fire" class="btn">Fire</button>
       </div>
     </div>
@@ -54,8 +56,9 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
   const SEND_INTERVAL = 100;            // ms, must stay well below WEB_TIMEOUT on the crawler
   const pad = document.getElementById("pad"), knob = document.getElementById("knob");
   const fireBtn = document.getElementById("fire"), lightBtn = document.getElementById("light");
+  const camLedBtn = document.getElementById("camled");
   const status = document.getElementById("status");
-  let x = 0, y = 0, padDown = false, fire = false, light = false, busy = false, timer = null;
+  let x = 0, y = 0, padDown = false, fire = false, light = false, camLed = false, busy = false, timer = null;
 
   document.getElementById("photo").src = location.protocol + "//" + location.hostname + ":81/stream";
   document.addEventListener("contextmenu", e => e.preventDefault());
@@ -101,6 +104,11 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
   lightBtn.addEventListener("click", () => {
     light = !light; lightBtn.classList.toggle("on", light);
     send("/action?go=light&v=" + (light ? 1 : 0));
+  });
+
+  camLedBtn.addEventListener("click", () => {
+    camLed = !camLed; camLedBtn.classList.toggle("on", camLed);
+    send("/action?go=camled&v=" + (camLed ? 1 : 0));
   });
 
   document.addEventListener("visibilitychange", () => { if (document.hidden) { setFire(false); releasePad(); } });

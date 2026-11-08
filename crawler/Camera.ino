@@ -134,6 +134,9 @@ static esp_err_t cmd_handler(httpd_req_t *req){
   else if(!strcmp(variable, "light")) {   // full front light on/off
     webLightReq = (atoi(vs) != 0) ? 1 : 0;
   }
+  else if(!strcmp(variable, "camled")) {  // flash LED on the ESP32-CAM board on/off
+    webCamLedReq = (atoi(vs) != 0) ? 1 : 0;
+  }
   else if(!strcmp(variable, "stop")) {
     Serial.println("Stop");
     stopMotors();
@@ -157,6 +160,10 @@ void handleWebControl() {
   if (webLightReq >= 0) {
     if (crawlerType == CRAWLER_PCA) setFrontLight(webLightReq ? 65 : 0);
     webLightReq = -1;
+  }
+  if (webCamLedReq >= 0) {
+    digitalWrite(CAM_LED_PIN, webCamLedReq ? HIGH : LOW);
+    webCamLedReq = -1;
   }
   if (!webActive) return;
   bool fireWanted = webFire;
